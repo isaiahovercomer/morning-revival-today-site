@@ -196,8 +196,10 @@ async function home() {
       el('p', { class: 'wk-meta', text: `${week.range}　${week.training}${week.englishTitle ? `　·　${week.englishTitle}` : ''}` }),
       list));
 
+  // 頁面最下面不放「來源」「對應訓練」兩行（t106u）；來源失敗時各卡片自己標「暫缺（原因）」，暫用快取在上方提示
+  const notes = week.stale ? [el('p', { class: 'notice', text: `來源暫時取不到，顯示先前快取（${week.stale}）。` })] : [];
   // 今日大按鈕是主要動作（不是內容卡），不做收合；其餘首頁卡片都可收合、預設展開
-  show(head, btn, card, segCard(segments, week, today), psrpCard(psrp, week), installCard(), statusLine(week));
+  show(head, ...notes, btn, card, segCard(segments, week, today), psrpCard(psrp, week), installCard());
   idle(() => prefetch('today'));
 }
 
@@ -252,22 +254,9 @@ function psrpCard(psrp, week) {
     psrp?.items?.length
       ? el('ul', { class: 'psrp-list', lang: 'zh-Hant' }, psrp.items.map(it => el('li', { class: `psrp-i psrp-${it.type}`, 'data-type': it.type },
         el('span', { class: 'psrp-tag', text: tag[it.type] }), it.text)))
-      : missing(`禱研背講要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的表格下面還沒有文字）' : srcErr(week, 'sheet')}`),
-    week.sources.sheet?.url ? el('p', { class: 'psrp-src' }, '來源：', el('a', { href: week.sources.sheet.url, target: '_blank', rel: 'noopener noreferrer', text: `每週PSRP 表格（${psrp?.tab || week.sources.sheet.tab || ''}）` })) : '');
+      : missing(`禱研背講要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的表格下面還沒有文字）' : srcErr(week, 'sheet')}`));
   return collapsible(el('section', { class: 'hcard blk psrp', id: 'psrp-card', 'data-testid': 'psrp', 'aria-labelledby': 'psrp-h' }),
     'psrp', el('h2', { id: 'psrp-h', text: byLang(PSRP_ZH, PSRP_EN) }), body);
-}
-
-function statusLine(week) {
-  const name = { taipei: '台北進度', training: '訓練對應', notion: '中文（Notion）', english: 'English（中英 PDF）', outlineEn: '英文綱目', sheet: '禱背（試算表）' };
-  const parts = Object.entries(week.sources).map(([k, v]) => el('span', { class: v.ok ? '' : 'bad', title: v.error || '' }, `${v.ok ? '✓' : '✗'} ${name[k] || k}　`));
-  const errs = Object.entries(week.sources).filter(([, v]) => !v.ok && v.error).map(([k, v]) => el('li', { text: `${name[k] || k}：${v.error}` }));
-  return el('div', { class: 'status', 'data-testid': 'status' },
-    el('p', {}, '來源：', parts),
-    week.notionTraining ? el('p', { 'data-testid': 'training' }, '本週對應訓練：', el('a', { href: week.notionTraining.url, target: '_blank', rel: 'noopener noreferrer', text: week.notionTraining.title }),
-      week.notionTraining.pinned ? '（手動指定）' : '（依台北進度自動對應）') : '',
-    errs.length ? el('ul', { class: 'errs' }, errs) : '',
-    week.stale ? el('p', { class: 'bad', text: `（暫用快取：${week.stale}）` }) : '');
 }
 
 // ---------- 加到主畫面 ----------
@@ -379,15 +368,7 @@ async function day(which) {
     el('a', { href: prev, class: 'press', 'aria-disabled': String(d.day <= 1) }, '‹ 前一天'),
     el('a', { href: '#/', class: 'press' }, WEEK_ZH),
     el('a', { href: next, class: 'press' }, d.day < 6 ? '後一天 ›' : '主日綱要 ›'));
-  show(head, ...notes, langSeg(), blocks, nav, sourcesLine(week, d));
-}
-
-function sourcesLine(week, d) {
-  return el('p', { class: 'srcs' }, '原始頁面：',
-    d?.zh?.url ? [el('a', { href: d.zh.url, target: '_blank', rel: 'noopener noreferrer', text: 'Notion 本日頁' }), '　'] : '',
-    week.sources.sheet?.url ? [el('a', { href: week.sources.sheet.url, target: '_blank', rel: 'noopener noreferrer', text: `試算表（${week.sources.sheet.tab || '每週PSRP'}）` }), '　'] : '',
-    week.sources.english?.file ? `English：${week.sources.english.file}　` : '',
-    week.sources.outlineEn?.file ? `英文綱目：${week.sources.outlineEn.file}` : '');
+  show(head, ...notes, langSeg(), blocks, nav);
 }
 
 /** 語言切換（中文／English／中英），存成設定後重畫 */
@@ -422,7 +403,7 @@ function outlineView(j, sundayToday) {
       missing('來源無英文（每週PSRP 表格只有中文）。')));
   }
   const nav = el('nav', { class: 'daynav', 'aria-label': '本週每一天' }, [1, 2, 3, 4, 5, 6].map(n => el('a', { href: `#/day/${n}`, class: 'press' }, '一二三四五六'[n - 1])));
-  show(head, ...notes, langSeg(), blocks, nav, sourcesLine(week, null));
+  show(head, ...notes, langSeg(), blocks, nav);
 }
 
 // ---------- 設定 ----------

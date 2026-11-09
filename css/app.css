@@ -124,8 +124,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .daylist .d-today { margin-left: 6px; font: 600 10px/1.6 var(--ui); color: var(--accent-fg); background: var(--accent); border-radius: 99px; padding: 1px 6px; vertical-align: 2px; }
 .daylist a.is-today .d-name { width: auto; min-width: 3.2em; }
 
-.status { margin-top: 14px; font: 12px/1.7 var(--ui); color: var(--muted); }
-.status .bad { color: var(--bad); }
 
 /* ===== day page ===== */
 .day-head { padding: 18px 2px 8px; }
@@ -164,7 +162,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .daynav { display: flex; gap: 10px; margin-top: 16px; }
 .daynav a { flex: 1; text-align: center; border: 1px solid var(--edge); background: var(--card); border-radius: 12px; padding: 10px; font: 500 14px var(--ui); color: var(--fg); text-decoration: none; }
 .daynav a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
-.srcs { font: 12px/1.7 var(--ui); color: var(--muted); margin-top: 14px; overflow-wrap: anywhere; }
 
 .foot { max-width: 640px; margin: 0 auto; padding: 8px 18px 28px; font: 11px/1.7 var(--ui); color: var(--muted); text-align: center; }
 .foot p { margin: 2px 0; }
@@ -236,7 +233,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .psrp-outline { color: var(--psrp-outline); }
 .psrp-verse { color: var(--psrp-verse); }
 .psrp-i.psrp-verse { font-weight: 700; }
-.psrp-src { font: 12px/1.6 var(--ui); color: var(--muted); margin: 6px 0 0; overflow-wrap: anywhere; }
 
 /* 本週分段・段落要點（D1～D6 左側）：每段一列＝日子＋中欄小標／段落要點（粗體）／分段 */
 .seg-card { scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px)); }
@@ -253,8 +249,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .seg-point { display: block; margin-top: 4px; font: 700 17px/1.6 var(--serif-zh); color: var(--psrp-outline); }
 .seg-text { margin: 4px 0 0; font-size: 15px; line-height: 1.75; color: var(--fg2); text-align: justify; }
 .d-today { margin-left: 2px; font: 600 10px/1.6 var(--ui); color: var(--accent-fg); background: var(--accent); border-radius: 99px; padding: 1px 6px; }
-.status p { margin: 0 0 4px; }
-.status .errs { margin: 4px 0 0; padding-left: 18px; color: var(--bad); }
 .btn {
   display: inline-block; min-height: 40px; padding: 0 18px; border-radius: 99px; background: var(--chrome); color: var(--chrome-fg);
   font: 600 14px/40px var(--ui); text-decoration: none;

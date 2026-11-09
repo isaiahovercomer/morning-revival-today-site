@@ -190,6 +190,7 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 /* ===== 首次使用教學（js/tour.js）：遮罩＋聚光＋泡泡，色票同原文聖經 ===== */
 .tour { position: fixed; inset: 0; z-index: 1000; opacity: 0; transition: opacity 220ms var(--ease); --tour-dim: rgba(16, 18, 28, .72); }
 .tour.on { opacity: 1; }
+.tour:not(.ready) .tour-bubble, .tour:not(.ready) .tour-hole { visibility: hidden; }
 .tour.closing { pointer-events: none; }
 .tour-catch { position: absolute; inset: 0; touch-action: none; }
 .tour-hole {

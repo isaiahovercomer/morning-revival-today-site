@@ -87,7 +87,8 @@ async function go(i, dir) {
   if (!a || a.busy || i < 0) return;
   if (i >= STEPS.length) { end(); return; }
   a.busy = true;
-  const el = await waitFor(STEPS[i].target, WAIT);
+  // 首頁還在載入就等一下；已載入（或載入失敗）就不等，缺的步驟直接跳過
+  const el = await waitFor(STEPS[i].target, document.querySelector('#app .loading') ? WAIT : 300);
   if (active !== a) return;
   a.busy = false;
   if (!el) {
@@ -118,6 +119,7 @@ function render() {
   a.live.textContent = a.Z(`第 ${n} 步，共 ${total} 步。${s.title}。${s.text}`);
   a.nextBtn.focus({ preventScroll: true });
   a.key = '';
+  a.root.classList.add('ready'); // 第一步就緒前不顯示空泡泡
 }
 
 function holeFor(el) {

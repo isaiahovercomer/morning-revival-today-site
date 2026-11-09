@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 靜態網站（GitHub Pages）不能設回應標頭，所以 CSP 寫在這裡；本機 server.mjs 另外送更嚴的標頭。connect-src 只允許 Apps Script 代理。 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>中英晨興聖言 TODAY</title>
+<meta name="description" content="今日晨興聖言：中文、English 與當天禱背綱要／經文">
+<meta name="theme-color" content="#2F3343">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="晨興TODAY">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+<script src="config.js"></script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a id="back" class="topbar-back press" href="#/" hidden></a>
+    <span class="topbar-title" id="topbar-title"></span>
+  </header>
+  <main id="app" aria-live="polite">
+    <p class="loading">載入中…</p>
+  </main>
+  <footer class="foot" id="foot"></footer>
+  <nav id="tabbar" class="tabbar" aria-label="主選單"></nav>
+</body>
+</html>

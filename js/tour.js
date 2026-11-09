@@ -19,7 +19,7 @@ const STEPS = [
   { id: 'outline', target: () => $('#tabbar [data-tab="outline"]'), title: '本週綱要',
     text: '整篇綱要（中文＋官方英文綱目）一次看完。' },
   { id: 'settings', target: () => $('#tabbar [data-tab="settings"]'), title: '設定',
-    text: '切換顯示語言、繁體／簡體、版面配色（跟隨系統、白天、暖白、護眼、黑夜），也可以重看這份教學。' },
+    text: '切換顯示語言、繁體／簡體、版面配色（暖白、白天、護眼、黑夜），也可以重看這份教學。' },
   { id: 'bible', target: () => $('#tabbar [data-tab="bible"]'), title: '原文聖經',
     text: '另開新分頁到「原文對照聖經」，查經文的希臘文、希伯來文原文。' },
   { id: 'install', target: () => $('#install-card'), title: '加到主畫面',

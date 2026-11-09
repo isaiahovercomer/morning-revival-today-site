@@ -19,7 +19,7 @@
   color-scheme: light;
 }
 /* 版面配色（設定 › 版面配色 → html[data-theme]，js/boot.js 首屏前套用）：上下 chrome（藏青）各配色都不變，只換內容區。
-   system（預設）＝系統淺色用暖白（上面 :root）、深色用黑夜；warm 暖白＝:root；light 白天；eye 護眼（淡綠）；dark 黑夜 */
+   與原文對照聖經一致：預設 warm 暖白＝:root，不依系統 prefers-color-scheme 自動變深（t109u 移除「跟隨系統」）；light 白天；eye 護眼（淡綠）；dark 黑夜 */
 :root[data-theme="light"] {
   --bg: #F4F5F7; --bg2: #E9EBEF; --card: #FFFFFF; --fg: #1F2433; --fg2: #444A5C; --muted: #5E6470;
   --line: #E1E4EA; --edge: #8A8F9C; --accent: #8A6431; --accent-soft: rgba(138, 100, 49, .12); --hl: #F3E3BF; --pray: #1F2433;
@@ -39,16 +39,6 @@
     --psrp-guide: #E0A77F; --psrp-outline: #9DB4DC; --psrp-verse: #94C6A0;
     --card-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
     color-scheme: dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]), :root[data-theme="system"] {
-    --bg: #17191F; --bg2: #23262F; --card: #1F2229; --fg: #ECE6DA; --fg2: #C9C3B6; --muted: #A39D91;
-    --line: #363A45; --edge: #5C5A55; --accent: #E0B074; --accent-soft: rgba(224, 176, 116, .16); --accent-fg: #1F2229;
-    --hl: #4A3E28; --pray: #F3EBDD; --bad: #F08A7E;
-    --psrp-guide: #E0A77F; --psrp-outline: #9DB4DC; --psrp-verse: #94C6A0;
-    --card-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
-    color-scheme: dark;
-  }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--fg); }
@@ -172,12 +162,13 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 
 /* ===== 底部選單（原文聖經 tabbar 的 chrome 色） ===== */
 .tabbar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; grid-template-columns: repeat(5, 1fr); /* 與原文聖經 tabbar 一樣平均分欄（t109u） */
   background: var(--chrome); border-top: 1px solid rgba(217, 164, 102, .25);
   padding: 0 4px env(safe-area-inset-bottom, 0px);
 }
 .tabbar .tab {
-  flex: 1; max-width: 128px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   min-height: 56px; padding: 6px 2px; color: #C9C2B3; text-decoration: none; font: 500 11px/1.2 var(--ui); letter-spacing: .02em;
 }
 .tabbar .tab-ic { font-size: 19px; line-height: 1.1; }
@@ -265,7 +256,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 /* 版面配色：每個按鈕前一個小色塊＝該配色的底色 */
 .theme-set button { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 2px; font-size: 13px; white-space: nowrap; }
 .theme-set .sw { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--edge); }
-.theme-set [data-v="system"] .sw { background: linear-gradient(135deg, #FAF6EE 50%, #17191F 50%); }
 .theme-set [data-v="light"] .sw { background: #FFFFFF; }
 .theme-set [data-v="warm"] .sw { background: #FAF6EE; }
 .theme-set [data-v="eye"] .sw { background: #DCE9D3; }

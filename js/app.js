@@ -16,12 +16,12 @@ export const BIBLE_URL = 'https://isaiahovercomer.github.io/interlinear-bible/';
 const SKEY = { lang: 'mrt.lang', script: 'mrt.script', theme: 'mrt.theme' };
 const LANGS = [['zh', '中文'], ['en', 'English'], ['both', '中英']];
 const SCRIPTS = [['tw', '繁體'], ['cn', '简体']];
-// 版面配色：html[data-theme]（js/boot.js 在首屏前先套用，免得閃色）；跟隨系統＝系統淺色用暖白、深色用黑夜
-const THEMES = [['system', '跟隨系統', 'System'], ['light', '白天', 'Day'], ['warm', '暖白', 'Warm'], ['eye', '護眼', 'Eye-care'], ['dark', '黑夜', 'Night']];
+// 版面配色：html[data-theme]（js/boot.js 在首屏前先套用，免得閃色）；預設暖白，與原文對照聖經一樣不跟系統深色（舊存的 system 讀成暖白）
+const THEMES = [['warm', '暖白', 'Warm'], ['light', '白天', 'Day'], ['eye', '護眼', 'Eye-care'], ['dark', '黑夜', 'Night']];
 function readSetting(k, ok, dflt) {
   try { const v = localStorage.getItem(SKEY[k]) ?? (k === 'lang' ? localStorage.getItem('mrv.lang') : null); return ok.some(([x]) => x === v) ? v : dflt; } catch { return dflt; }
 }
-export const settings = { lang: readSetting('lang', LANGS, 'both'), script: readSetting('script', SCRIPTS, 'tw'), theme: readSetting('theme', THEMES, 'system') };
+export const settings = { lang: readSetting('lang', LANGS, 'both'), script: readSetting('script', SCRIPTS, 'tw'), theme: readSetting('theme', THEMES, 'warm') };
 function saveSetting(k, v) { settings[k] = v; try { localStorage.setItem(SKEY[k], v); } catch {} }
 
 // ---------- 繁簡 ----------
@@ -421,8 +421,8 @@ function settingsView() {
       el('h2', { text: '繁體／簡體' }), el('p', { class: 'set-hint', text: '選簡體時，整個介面與內容都用簡體字顯示。' }),
       seg('script', SCRIPTS, '繁體或簡體', 'zh-set'),
       el('h2', { text: enOr('版面配色', 'Colour theme') }),
-      el('p', { class: 'set-hint', text: enOr('跟隨系統（預設）：手機淺色時用暖白、深色時用黑夜；也可固定白天、暖白、護眼（淡綠）或黑夜。',
-        'System (default) follows your phone: Warm in light mode, Night in dark mode. Or pick Day, Warm, Eye-care (soft green) or Night.') }),
+      el('p', { class: 'set-hint', text: enOr('預設暖白（與原文對照聖經相同，不隨手機深色模式變黑）；也可改白天、護眼（淡綠）或黑夜。',
+        'Warm by default (same as the Interlinear Bible; it does not turn dark with your phone). Or pick Day, Eye-care (soft green) or Night.') }),
       seg('theme', THEMES, enOr('版面配色', 'Colour theme'), 'theme-set'),
       el('h2', { text: '使用教學' }),
       el('button', { type: 'button', class: 'btn press', id: 'tour-replay', onclick: () => { location.hash = '#/'; setTimeout(() => replayTour(), 50); } }, '重新觀看使用教學'),

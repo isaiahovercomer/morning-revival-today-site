@@ -3,7 +3,9 @@
 // 所有來源文字一律用 textContent／createTextNode 放進 DOM，不用 innerHTML。
 // 繁簡：代理輸出一律繁體；選「簡中」時，介面與內容的每段文字都經 t2s 轉簡（el() 統一處理）。
 import { makeConv } from './zhconv.js';
-import { maybeStartTour, replayTour, initTour } from './tour.js';
+import { maybeStartTour, replayTour, initTour, tourActive } from './tour.js';
+import { isFresh, sameContent, getLocal, putLocal, pruneLocal } from './store.js';
+import { rcvLink } from './rcv.js';
 
 const $app = document.getElementById('app');
 const $back = document.getElementById('back');
@@ -11,13 +13,15 @@ const API_BASE = (window.MRT_CONFIG && window.MRT_CONFIG.apiBase) || '';
 export const BIBLE_URL = 'https://isaiahovercomer.github.io/interlinear-bible/';
 
 // ---------- 設定（localStorage） ----------
-const SKEY = { lang: 'mrt.lang', script: 'mrt.script' };
+const SKEY = { lang: 'mrt.lang', script: 'mrt.script', theme: 'mrt.theme' };
 const LANGS = [['zh', '中文'], ['en', 'English'], ['both', '中英']];
 const SCRIPTS = [['tw', '繁體'], ['cn', '简体']];
+// 版面配色：html[data-theme]（js/boot.js 在首屏前先套用，免得閃色）；跟隨系統＝系統淺色用暖白、深色用黑夜
+const THEMES = [['system', '跟隨系統', 'System'], ['light', '白天', 'Day'], ['warm', '暖白', 'Warm'], ['eye', '護眼', 'Eye-care'], ['dark', '黑夜', 'Night']];
 function readSetting(k, ok, dflt) {
   try { const v = localStorage.getItem(SKEY[k]) ?? (k === 'lang' ? localStorage.getItem('mrv.lang') : null); return ok.some(([x]) => x === v) ? v : dflt; } catch { return dflt; }
 }
-export const settings = { lang: readSetting('lang', LANGS, 'both'), script: readSetting('script', SCRIPTS, 'tw') };
+export const settings = { lang: readSetting('lang', LANGS, 'both'), script: readSetting('script', SCRIPTS, 'tw'), theme: readSetting('theme', THEMES, 'system') };
 function saveSetting(k, v) { settings[k] = v; try { localStorage.setItem(SKEY[k], v); } catch {} }
 
 // ---------- 繁簡 ----------
@@ -49,15 +53,48 @@ export function el(tag, attrs = {}, ...kids) {
 
 // ---------- API ----------
 // 只切換語言時（redraw）沿用上次同一網址的資料重畫，不重打網路、不閃「載入中」。
+// 顯示過的回應存 IndexedDB（js/store.js）：再開時先用本地（同一天／同一週才算數）立刻畫出，背景向代理更新；內容有變才安靜重畫。
 const memo = new Map();
-let reuse = false;
+let reuse = false, quiet = false, viewUrl = '';
+const REVALIDATE_MS = 60_000; // 一分鐘內剛存的不再背景重抓（例：首頁預先抓好今日，馬上點進去）
+const apiUrl = (route, d) => API_BASE ? `${API_BASE}?api=${route}${d ? `&d=${d}` : ''}` : `api/${route}${d ? `/${d}` : ''}`;
 async function api(route, d) {
-  const url = API_BASE ? `${API_BASE}?api=${route}${d ? `&d=${d}` : ''}` : `api/${route}${d ? `/${d}` : ''}`;
+  const url = viewUrl = apiUrl(route, d);
   if (reuse && memo.has(url)) return memo.get(url);
-  const j = await apiFetch(url);
+  const hit = await getLocal(url);
+  if (hit && isFresh(route, hit.data)) {
+    memo.set(url, hit.data);
+    $app.dataset.from = 'local';
+    if (!(Date.now() - hit.savedAt < REVALIDATE_MS)) revalidate(route, url, hit.data);
+    return hit.data;
+  }
+  $app.dataset.from = 'network';
+  return remember(route, url, await apiFetch(url));
+}
+function remember(route, url, j) {
   memo.set(url, j);
+  if (isFresh(route, j)) putLocal(url, j);
   return j;
 }
+const inflight = new Set();
+async function revalidate(route, url, old) {
+  if (inflight.has(url)) return;
+  inflight.add(url);
+  try {
+    const j = remember(route, url, await apiFetch(url));
+    // 還停在同一頁、內容真的變了才重畫（保留捲動位置與收合狀態）；教學進行中不動畫面，下次開啟就是新的
+    if (viewUrl === url && !sameContent(j, old) && !tourActive()) { quiet = true; await redraw(); }
+  } catch {} finally { inflight.delete(url); quiet = false; }
+}
+/** 首頁畫好後，閒置時先把今日抓好存起來，點「今日」就不用等 */
+async function prefetch(route) {
+  const url = apiUrl(route);
+  const hit = await getLocal(url);
+  if ((hit && isFresh(route, hit.data)) || inflight.has(url)) return;
+  inflight.add(url);
+  try { remember(route, url, await apiFetch(url)); } catch {} finally { inflight.delete(url); }
+}
+const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(fn, 1200));
 async function apiFetch(url) {
   let r;
   try { r = await fetch(url, { headers: { accept: 'application/json' } }); } catch (e) {
@@ -76,27 +113,40 @@ async function apiFetch(url) {
 
 // 當週禱研背進度：中文／English／中英各自的說法（中文仍稱「禱背」，英文一律 pray-reading, reciting）
 const WEEK_ZH = '當週禱研背進度', WEEK_EN = 'This week’s pray-reading, reciting progress';
+/** 只在 English 介面換英文（設定頁各標題維持中文；中英並列太長） */
+const enOr = (zh, en) => settings.lang === 'en' ? en : zh;
 const byLang = (zh, en) => settings.lang === 'zh' ? zh : settings.lang === 'en' ? en : `${zh}　${en}`;
 
 const md = (date) => { const [, m, d] = date.split('-'); return `${+m}/${+d}`; };
 const weekZh = (n) => '〇一二三四五六七八九十'[n] ?? n;
 
-function show(...nodes) { $app.replaceChildren(...nodes.flat(Infinity).filter(n => n != null && n !== '' && n !== false)); window.scrollTo(0, 0); }
-function loading(msg) { if (reuse) return; show(el('p', { class: 'loading', text: msg }), API_BASE ? el('p', { class: 'loading-sub', text: '第一次讀取本週資料時，代理要即時抓取來源，約需 10～30 秒。' }) : ''); }
+function show(...nodes) {
+  $app.replaceChildren(...nodes.flat(Infinity).filter(n => n != null && n !== '' && n !== false));
+  if (!quiet) window.scrollTo(0, 0);
+  if (!$app.querySelector('.loading') && !performance.getEntriesByName('mrt-content').length) performance.mark('mrt-content'); // 首次內容出現時間（test:live 量測用）
+}
+// 骨架：先畫出版面輪廓（大按鈕＋卡片），內容到了再換上；index.html 裡有同樣的靜態骨架，JS 還沒跑完就看得到
+function loading(msg) {
+  if (reuse) return;
+  const line = () => el('i', { class: 'skel-line' }); // 寬度用 CSS nth-child（CSP 不允許 style 屬性）
+  show(el('div', { class: 'loading', role: 'status' },
+    el('p', { class: 'skel-msg', text: msg }),
+    API_BASE ? el('p', { class: 'loading-sub', text: '第一次讀取本週資料時，代理要即時抓取來源，約需 10～30 秒；之後再開會先顯示本機存好的內容。' }) : '',
+    el('div', { class: 'skel-btn', 'aria-hidden': 'true' }),
+    [4, 3].map(n => el('div', { class: 'skel-card', 'aria-hidden': 'true' }, Array.from({ length: n }, line)))));
+}
 function fail(e) {
   show(el('p', { class: 'error', role: 'alert', 'data-testid': 'error', text: `取不到資料：${e.message}` }),
     el('p', { class: 'center' }, el('button', { type: 'button', class: 'btn press', onclick: () => route() }, '重新載入')));
 }
 
 // ---------- 版面：上方標題、頁尾、底部選單 ----------
+const FOOT = '晨興聖言屬出版內容：本站不存放全文，於瀏覽時經代理即時取得，僅供個人追求。'; // 與 index.html 靜態頁尾同字
 function chrome(view) {
   document.getElementById('topbar-title').textContent = Z('中英晨興聖言 TODAY');
   $back.textContent = Z('‹ 首頁');
   $back.hidden = view === 'home';
-  document.getElementById('foot').replaceChildren(
-    el('p', {}, '進度：', el('a', { href: 'https://www.churchintaipei.org/pursuit', rel: 'noopener noreferrer', target: '_blank' }, '臺北市召會共同追求進度'), ' · 內容：',
-      el('a', { href: 'https://mygoodland.notion.site/', rel: 'noopener noreferrer', target: '_blank' }, '一年七次（Notion）'), ' · 禱背：每週PSRP表格'),
-    el('p', { text: '晨興聖言屬出版內容：本站不存放全文，於瀏覽時經代理即時取得，僅供個人追求。' }));
+  document.getElementById('foot').replaceChildren(el('p', { text: FOOT }));
   const tab = (key, href, icon, label) => el('a', { href, class: `tab press${view === key ? ' on' : ''}`, 'data-tab': key, ...(view === key ? { 'aria-current': 'page' } : {}) },
     el('span', { class: 'tab-ic', 'aria-hidden': 'true', text: icon }), el('span', { class: 'tab-t', text: label }));
   document.getElementById('tabbar').replaceChildren(
@@ -148,6 +198,7 @@ async function home() {
 
   // 今日大按鈕是主要動作（不是內容卡），不做收合；其餘首頁卡片都可收合、預設展開
   show(head, btn, card, segCard(segments, week, today), psrpCard(psrp, week), installCard(), statusLine(week));
+  idle(() => prefetch('today'));
 }
 
 // 本週分段・段落要點：每週PSRP 表格 D1～D6 左側「分段」「段落要點」兩欄＋中欄（啟示／應用／結果）。
@@ -187,8 +238,8 @@ function segCard(segments, week, today) {
     'seg', el('h2', { id: 'seg-h', text: byLang(SEG_ZH, SEG_EN) }), body);
 }
 
-// 本週PSRP要點：每週PSRP 表格 D1～D6 下面的文字，代理分成指引／綱目／經文三類（tools/lib.mjs classifyPsrp）
-const PSRP_ZH = '本週PSRP要點', PSRP_EN = 'This week’s PSRP points';
+// 禱研背講要點：每週PSRP 表格 D1～D6 下面的文字，代理分成指引／綱目／經文三類（tools/lib.mjs classifyPsrp）
+const PSRP_ZH = '禱研背講要點', PSRP_EN = 'Pray-reading, reciting & speaking points';
 const PSRP_TYPES = [['guide', '指引', 'Guide'], ['outline', '綱目', 'Outline'], ['verse', '經文', 'Verse']];
 function psrpCard(psrp, week) {
   const label = Object.fromEntries(PSRP_TYPES.map(([k, zh, en]) => [k, byLang(zh, en)]));
@@ -201,7 +252,7 @@ function psrpCard(psrp, week) {
     psrp?.items?.length
       ? el('ul', { class: 'psrp-list', lang: 'zh-Hant' }, psrp.items.map(it => el('li', { class: `psrp-i psrp-${it.type}`, 'data-type': it.type },
         el('span', { class: 'psrp-tag', text: tag[it.type] }), it.text)))
-      : missing(`本週PSRP要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的表格下面還沒有文字）' : srcErr(week, 'sheet')}`),
+      : missing(`禱研背講要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的表格下面還沒有文字）' : srcErr(week, 'sheet')}`),
     week.sources.sheet?.url ? el('p', { class: 'psrp-src' }, '來源：', el('a', { href: week.sources.sheet.url, target: '_blank', rel: 'noopener noreferrer', text: `每週PSRP 表格（${psrp?.tab || week.sources.sheet.tab || ''}）` })) : '');
   return collapsible(el('section', { class: 'hcard blk psrp', id: 'psrp-card', 'data-testid': 'psrp', 'aria-labelledby': 'psrp-h' }),
     'psrp', el('h2', { id: 'psrp-h', text: byLang(PSRP_ZH, PSRP_EN) }), body);
@@ -273,6 +324,11 @@ const enParas = (paras) => paras.map(p => el('p', { class: REF_RE.test(p) ? 'ref
 const enOutlineLines = (lines) => lines.map(t => el('p', { class: /^[IVXL]+\. /.test(t) ? 'h' : 'ol', text: t }));
 const srcErr = (week, k) => week.sources[k]?.error ? `（${week.sources[k].error}）` : '';
 
+// 英文經文：LSM 禁止下載／快取 Recovery Version 電子版（_research/RCV_TOS.md），只放外連，不抓不存
+function rcvAnchor(ref) {
+  const r = rcvLink(ref);
+  return r ? el('p', { class: 'rcv' }, el('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', 'data-testid': 'rcv-link', lang: 'en', text: `Open ${r.book} ${r.chapter} in the Recovery Version ↗` })) : '';
+}
 function prayerBlock(p, week) {
   let zh;
   if (!p || (!p.outline && !p.verse)) zh = missing(`禱背暫缺${srcErr(week, 'sheet')}`);
@@ -284,7 +340,8 @@ function prayerBlock(p, week) {
     p?.en ? [el('strong', { class: 'p-text pray-outline-en', text: p.en.text }), el('span', { class: 'p-note', text: `對應官方英文綱目第 ${p.en.path} 點（禱背表格本身只有中文）` })]
       : missing(p ? '暫缺：英文綱目對不上這個出處，或英文綱目取不到。' : '暫缺'),
     el('span', { class: 'p-ref', text: 'Pray-reading, reciting verses' }),
-    missing('來源無英文（每週PSRP 表格只有中文禱背經文）。')];
+    missing('來源無英文（每週PSRP 表格只有中文禱背經文）。'),
+    rcvAnchor(p?.verseRef)];
   return block('pray', '禱背', 'Pray-reading, reciting', zh, en, { 'aria-label': '今日禱背' });
 }
 
@@ -373,7 +430,8 @@ function settingsView() {
   chrome('settings');
   document.title = Z('設定｜中英晨興聖言 TODAY');
   const seg = (key, opts, label, cls) => el('div', { class: `seg ${cls}`, role: 'group', 'aria-label': label },
-    opts.map(([v, t]) => el('button', { type: 'button', raw: key === 'script', 'data-v': v, 'aria-pressed': String(settings[key] === v), onclick: async () => { saveSetting(key, v); await ensureScript(); route(); } }, t)));
+    opts.map(([v, t, en]) => el('button', { type: 'button', raw: key === 'script', 'data-v': v, 'aria-pressed': String(settings[key] === v), onclick: async () => { saveSetting(key, v); applyTheme(); await ensureScript(); route(); } },
+      key === 'theme' ? [el('i', { class: 'sw', 'aria-hidden': 'true' }), settings.lang === 'en' ? en : t] : t)));
   show(
     el('header', { class: 'day-head' }, el('h1', { text: '設定' })),
     el('section', { class: 'hcard set-card' },
@@ -381,12 +439,18 @@ function settingsView() {
       seg('lang', LANGS, '顯示語言', 'lang-set'),
       el('h2', { text: '繁體／簡體' }), el('p', { class: 'set-hint', text: '選簡體時，整個介面與內容都用簡體字顯示。' }),
       seg('script', SCRIPTS, '繁體或簡體', 'zh-set'),
+      el('h2', { text: enOr('版面配色', 'Colour theme') }),
+      el('p', { class: 'set-hint', text: enOr('跟隨系統（預設）：手機淺色時用暖白、深色時用黑夜；也可固定白天、暖白、護眼（淡綠）或黑夜。',
+        'System (default) follows your phone: Warm in light mode, Night in dark mode. Or pick Day, Warm, Eye-care (soft green) or Night.') }),
+      seg('theme', THEMES, enOr('版面配色', 'Colour theme'), 'theme-set'),
       el('h2', { text: '使用教學' }),
       el('button', { type: 'button', class: 'btn press', id: 'tour-replay', onclick: () => { location.hash = '#/'; setTimeout(() => replayTour(), 50); } }, '重新觀看使用教學'),
       el('h2', { text: '加到主畫面' }), installCard(false) || el('p', { class: 'set-hint', text: '已經以 App 模式開啟。' }),
       el('h2', { text: '其他' }),
       el('p', {}, el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer' }, '原文對照聖經 ↗'))));
 }
+
+function applyTheme() { document.documentElement.dataset.theme = settings.theme; }
 
 // ---------- 路由 ----------
 let current = '';
@@ -407,7 +471,9 @@ export async function route() {
   } catch (e) { fail(e); if (h === '#/' || h === '') maybeStartTour(); }
   finally { reuse = false; }
 }
+applyTheme();
 initTour({ Z, el });
+idle(() => pruneLocal());
 addEventListener('hashchange', route);
 route();
 

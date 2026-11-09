@@ -8,8 +8,8 @@
   --hl: #F6E2B6; --capsule: #2F3343; --capsule-fg: #F7F1E4;
   --pray: #2F3343; /* 禱背：粗體＋系統暗藍 */
   --bad: #B03A2E; --accent-fg: #fff;
-  /* 本週PSRP要點三類：指引（赭）／綱目（藍）／經文（綠）；淺色底對比皆 ≥ 6:1 */
-  --psrp-guide: #9A4512; --psrp-outline: #2A4D8F; --psrp-verse: #2D6A3A;
+  /* 禱研背講要點三類：指引（赭）／綱目（藍）／經文（綠）；每個配色各自調成柔和但分得出，與卡片底色對比 4.5～9:1（tests/unit/theme.test.mjs） */
+  --psrp-guide: #9C5A33; --psrp-outline: #3F5E8C; --psrp-verse: #3D6E4A;
   --fs: 18px; --lh: 1.8;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --serif-zh: "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", "Noto Serif CJK SC", serif;
@@ -18,13 +18,34 @@
   --card-shadow: 0 1px 2px rgba(60, 40, 20, .05), 0 8px 24px rgba(60, 40, 20, .06);
   color-scheme: light;
 }
-/* 深色主題（跟隨系統）：上下 chrome 不變，內容區換深底淺字 */
-@media (prefers-color-scheme: dark) {
-  :root {
+/* 版面配色（設定 › 版面配色 → html[data-theme]，js/boot.js 首屏前套用）：上下 chrome（藏青）各配色都不變，只換內容區。
+   system（預設）＝系統淺色用暖白（上面 :root）、深色用黑夜；warm 暖白＝:root；light 白天；eye 護眼（淡綠）；dark 黑夜 */
+:root[data-theme="light"] {
+  --bg: #F4F5F7; --bg2: #E9EBEF; --card: #FFFFFF; --fg: #1F2433; --fg2: #444A5C; --muted: #5E6470;
+  --line: #E1E4EA; --edge: #8A8F9C; --accent: #8A6431; --accent-soft: rgba(138, 100, 49, .12); --hl: #F3E3BF; --pray: #1F2433;
+  --psrp-guide: #A0552E; --psrp-outline: #3A5D94; --psrp-verse: #3A7049;
+  --card-shadow: 0 1px 2px rgba(20, 24, 40, .05), 0 8px 24px rgba(20, 24, 40, .06);
+}
+:root[data-theme="eye"] {
+  --bg: #E4EEDD; --bg2: #D8E5D0; --card: #F3F8EE; --fg: #25302A; --fg2: #3D4A40; --muted: #55604F;
+  --line: #CCDAC3; --edge: #7F8C78; --accent: #7A5A2B; --accent-soft: rgba(122, 90, 43, .13); --hl: #E9E2B8; --pray: #25302A; --bad: #A63A2E;
+  --psrp-guide: #97532D; --psrp-outline: #365A8A; --psrp-verse: #2F6A3E;
+  --card-shadow: 0 1px 2px rgba(30, 50, 30, .05), 0 8px 24px rgba(30, 50, 30, .06);
+}
+:root[data-theme="dark"] {
     --bg: #17191F; --bg2: #23262F; --card: #1F2229; --fg: #ECE6DA; --fg2: #C9C3B6; --muted: #A39D91;
     --line: #363A45; --edge: #5C5A55; --accent: #E0B074; --accent-soft: rgba(224, 176, 116, .16); --accent-fg: #1F2229;
     --hl: #4A3E28; --pray: #F3EBDD; --bad: #F08A7E;
-    --psrp-guide: #F2A46E; --psrp-outline: #9FBDF5; --psrp-verse: #8ED39D;
+    --psrp-guide: #E0A77F; --psrp-outline: #9DB4DC; --psrp-verse: #94C6A0;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]), :root[data-theme="system"] {
+    --bg: #17191F; --bg2: #23262F; --card: #1F2229; --fg: #ECE6DA; --fg2: #C9C3B6; --muted: #A39D91;
+    --line: #363A45; --edge: #5C5A55; --accent: #E0B074; --accent-soft: rgba(224, 176, 116, .16); --accent-fg: #1F2229;
+    --hl: #4A3E28; --pray: #F3EBDD; --bad: #F08A7E;
+    --psrp-guide: #E0A77F; --psrp-outline: #9DB4DC; --psrp-verse: #94C6A0;
     --card-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
     color-scheme: dark;
   }
@@ -51,9 +72,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 main { max-width: 640px; margin: 0 auto; padding: 0 16px 24px; }
 body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .center { text-align: center; }
-.loading-sub { font: 12px/1.6 var(--ui); color: var(--muted); text-align: center; margin-top: -28px; }
-.loading, .error { font: 15px/1.6 var(--ui); color: var(--muted); padding: 40px 4px; text-align: center; }
-.error { color: var(--bad); }
+.loading-sub { font: 12px/1.6 var(--ui); color: var(--muted); text-align: center; }
+.error { font: 15px/1.6 var(--ui); color: var(--bad); padding: 40px 4px; text-align: center; }
+/* 載入中：骨架（大按鈕＋卡片輪廓），index.html 有同樣的靜態版 */
+.loading { padding-top: 18px; }
+.skel-msg { font: 13px/1.6 var(--ui); color: var(--muted); text-align: center; margin: 0 0 4px; }
+.loading .loading-sub { margin: 0 0 8px; }
+.skel-btn { height: 124px; margin-top: 12px; border-radius: 20px; background: var(--chrome); opacity: .9; }
+.skel-card { margin-top: 16px; padding: 14px 18px 8px; border-radius: 18px; background: var(--card); border: .5px solid var(--line); box-shadow: var(--card-shadow); }
+.skel-line { display: block; height: 12px; margin: 0 0 12px; border-radius: 6px; background: var(--bg2); width: 86%; animation: skel 1.1s ease-in-out infinite alternate; }
+.skel-line:first-child { width: 42%; height: 14px; }
+.skel-line:nth-child(3) { width: 72%; }
+.skel-line:last-child:not(:first-child) { width: 58%; }
+@keyframes skel { from { opacity: .5; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .skel-line { animation: none; } }
 
 /* ===== home ===== */
 .home-head { padding: 22px 4px 16px; }
@@ -134,7 +166,7 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .daynav a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
 .srcs { font: 12px/1.7 var(--ui); color: var(--muted); margin-top: 14px; overflow-wrap: anywhere; }
 
-.foot { max-width: 640px; margin: 0 auto; padding: 8px 18px 28px; font: 11px/1.7 var(--ui); color: var(--muted); }
+.foot { max-width: 640px; margin: 0 auto; padding: 8px 18px 28px; font: 11px/1.7 var(--ui); color: var(--muted); text-align: center; }
 .foot p { margin: 2px 0; }
 
 /* 後台 */
@@ -190,7 +222,7 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 
 .daynav a { min-width: 0; }
 
-/* ===== 首頁：本週PSRP要點（指引／綱目／經文三色＋圖例） ===== */
+/* ===== 首頁：禱研背講要點（指引／綱目／經文三色＋圖例） ===== */
 .psrp { scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px)); }
 .psrp-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 2px 0 4px; padding: 0; list-style: none; font: 600 13px/1.6 var(--ui); }
 .psrp-legend li { display: flex; align-items: center; gap: 6px; }
@@ -236,6 +268,15 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .set-card h2 { font: 600 15px/1.4 var(--serif-zh); margin: 18px 0 2px; }
 .set-hint { font: 13px/1.6 var(--ui); color: var(--muted); margin: 2px 0 8px; }
 .set-card .seg { margin-top: 6px; }
+/* 版面配色：每個按鈕前一個小色塊＝該配色的底色 */
+.theme-set button { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 2px; font-size: 13px; white-space: nowrap; }
+.theme-set .sw { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--edge); }
+.theme-set [data-v="system"] .sw { background: linear-gradient(135deg, #FAF6EE 50%, #17191F 50%); }
+.theme-set [data-v="light"] .sw { background: #FFFFFF; }
+.theme-set [data-v="warm"] .sw { background: #FAF6EE; }
+.theme-set [data-v="eye"] .sw { background: #DCE9D3; }
+.theme-set [data-v="dark"] .sw { background: #17191F; }
+.rcv { margin: 4px 0 0; font: 13px/1.6 var(--ui); }
 .set-card .install { box-shadow: none; margin-top: 6px; }
 
 /* ===== 首次使用教學（js/tour.js）：遮罩＋聚光＋泡泡，色票同原文聖經 ===== */

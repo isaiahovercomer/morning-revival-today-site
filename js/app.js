@@ -234,8 +234,6 @@ function segCard(segments, week, today) {
   const midText = (m) => m.split('／').map(x => settings.lang === 'en' ? MID_EN[x] || x : settings.lang === 'both' && MID_EN[x] ? `${x} ${MID_EN[x]}` : x).join('／');
   const isToday = (g) => !today.sunday && today.day >= g.from && today.day <= g.to;
   const body = el('div', { class: 'blk-body', id: 'seg-body' },
-    el('p', { class: 'seg-hint', text: byLang('粗體＝段落要點，下方＝分段；取自每週PSRP 表格 D1～D6 左側。',
-      'Bold = key point, below = segment; from the left of the D1–D6 rows of the weekly PSRP table. The source is in Chinese only.') }),
     groups.length
       ? el('ol', { class: 'seg-list', 'data-testid': 'seg-list' }, groups.map(g => el('li', { class: `seg-i${isToday(g) ? ' is-today' : ''}`, 'data-from': g.from, 'data-to': g.to },
         el('div', { class: 'seg-meta' },
@@ -259,8 +257,6 @@ function psrpCard(psrp, week) {
   const body = el('div', { class: 'blk-body', id: 'psrp-body' },
     el('ul', { class: 'psrp-legend', 'data-testid': 'psrp-legend', 'aria-label': byLang('顏色說明', 'Colour key') },
       PSRP_TYPES.map(([k]) => el('li', { class: `psrp-${k}` }, el('i', { 'aria-hidden': 'true' }), label[k]))),
-    el('p', { class: 'psrp-hint', text: byLang('依每週PSRP 表格下方的文字自動分類：指引＝帶領步驟（兩兩對說、禱讀…）；綱目＝綱目思路與各點要點；經文＝經文引用。',
-      'Auto-sorted from the text under the weekly PSRP table: Guide = leading steps; Outline = outline flow and points; Verse = scripture quoted. The source is in Chinese only.') }),
     psrp?.items?.length
       ? el('ul', { class: 'psrp-list', lang: 'zh-Hant' }, psrp.items.map(it => el('li', { class: `psrp-i psrp-${it.type}`, 'data-type': it.type },
         el('span', { class: 'psrp-tag', text: tag[it.type] }), it.text)))
@@ -329,17 +325,13 @@ function rcvAnchor(ref) {
   const r = rcvLink(ref);
   return r ? el('p', { class: 'rcv' }, el('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', 'data-testid': 'rcv-link', lang: 'en', text: `Open ${r.book} ${r.chapter} in the Recovery Version ↗` })) : '';
 }
-// 禱背經文英文（t110u）：代理依出處從附經文英文綱目逐節取，對不齊用當天 Morning Nourishment；都沒有才放 RcV 外連
-const VERSE_SRC = {
-  'outline-verses': ['取自官方附經文英文綱目（Outlines with Verses），依禱背經文出處逐節對應', 'From the official Outlines with Verses, matched verse by verse to the reference'],
-  nourishment: ['取自當天 Morning Nourishment 的同一處經文', 'From the same passage in today’s Morning Nourishment'],
-};
+// 禱背經文英文（t110u）：代理依出處從附經文英文綱目逐節取，對不齊用當天 Morning Nourishment；都沒有才放 RcV 外連。
+// 內容下方不放來源／說明灰色小字（t111u）
 function enVerses(p) {
   const v = p?.verseEn;
   if (!v?.verses?.length) return [missing(p?.verseRef ? '暫缺：附經文英文綱目與當天 Morning Nourishment 都對不到這處經文。' : '暫缺'), rcvAnchor(p?.verseRef)];
-  return [v.verses.map(x => el('strong', { class: 'p-text pray-verse pray-verse-en', 'data-testid': 'pray-verse-en', 'data-ref': x.ref },
-    v.verses.length > 1 ? el('span', { class: 'p-vno', text: `${x.ref.replace(/^.*:/, '')} ` }) : '', x.text)),
-  el('span', { class: 'p-note', 'data-testid': 'verse-src', 'data-src': v.source, text: VERSE_SRC[v.source] ? enOr(...VERSE_SRC[v.source]) : '' })];
+  return v.verses.map(x => el('strong', { class: 'p-text pray-verse pray-verse-en', 'data-testid': 'pray-verse-en', 'data-ref': x.ref },
+    v.verses.length > 1 ? el('span', { class: 'p-vno', text: `${x.ref.replace(/^.*:/, '')} ` }) : '', x.text));
 }
 function prayerBlock(p, week) {
   let zh;
@@ -349,7 +341,7 @@ function prayerBlock(p, week) {
     p.verse ? [el('span', { class: 'p-ref', text: `禱背經文　${p.verseRef}` }), el('strong', { class: 'p-text pray-verse', text: p.verse })] : ''];
   const en = [
     el('span', { class: 'p-ref', text: 'Pray-reading, reciting outline' }),
-    p?.en ? [el('strong', { class: 'p-text pray-outline-en', text: p.en.text }), el('span', { class: 'p-note', text: `對應官方英文綱目第 ${p.en.path} 點（禱背表格本身只有中文）` })]
+    p?.en ? el('strong', { class: 'p-text pray-outline-en', text: p.en.text })
       : missing(p ? '暫缺：英文綱目對不上這個出處，或英文綱目取不到。' : '暫缺'),
     el('span', { class: 'p-ref', text: `Pray-reading, reciting verses${p?.verseEn ? `　${p.verseEn.ref}` : ''}` }),
     enVerses(p)];

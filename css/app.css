@@ -205,7 +205,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .blk .p-text { display: block; font-weight: 700; color: var(--pray); font-size: 1.02em; line-height: 1.75; margin-top: 2px; }
 .blk .p-text.pray-verse-en + .p-text.pray-verse-en { margin-top: 4px; }
 .blk .p-vno { font: 600 .72em var(--ui); color: var(--muted); vertical-align: .3em; }
-.blk .p-note { display: block; font: 12px/1.6 var(--ui); color: var(--muted); margin-top: 2px; }
 .wp { padding: 8px 0; border-bottom: .5px solid var(--line); }
 .wp:last-child { border-bottom: 0; }
 .wp-day { font: 600 14px var(--ui); color: var(--accent); text-decoration: none; }
@@ -217,7 +216,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .psrp-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 2px 0 4px; padding: 0; list-style: none; font: 600 13px/1.6 var(--ui); }
 .psrp-legend li { display: flex; align-items: center; gap: 6px; }
 .psrp-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: currentColor; }
-.psrp-hint { font: 12px/1.6 var(--ui); color: var(--muted); margin: 0 0 8px; }
 .psrp-list { margin: 0; padding: 0; list-style: none; }
 .psrp-i { margin: 0 0 .55em; padding-left: 10px; border-left: 3px solid currentColor; line-height: 1.75; text-align: justify; }
 .psrp-tag { display: inline-block; margin-right: 6px; font: 600 11px/1.5 var(--ui); letter-spacing: .08em; vertical-align: 1px; }
@@ -229,7 +227,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 
 /* 本週分段・段落要點（D1～D6 左側）：每段一列＝日子＋中欄小標／段落要點（粗體）／分段 */
 .seg-card { scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px)); }
-.seg-hint { font: 12px/1.6 var(--ui); color: var(--muted); margin: 0 0 4px; }
 .seg-list { margin: 0; padding: 0; list-style: none; }
 .seg-i { padding: 10px 0 12px; }
 .seg-i + .seg-i { border-top: .5px solid var(--line); }

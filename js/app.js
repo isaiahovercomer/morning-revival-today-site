@@ -48,8 +48,17 @@ export function el(tag, attrs = {}, ...kids) {
 }
 
 // ---------- API ----------
+// 只切換語言時（redraw）沿用上次同一網址的資料重畫，不重打網路、不閃「載入中」。
+const memo = new Map();
+let reuse = false;
 async function api(route, d) {
   const url = API_BASE ? `${API_BASE}?api=${route}${d ? `&d=${d}` : ''}` : `api/${route}${d ? `/${d}` : ''}`;
+  if (reuse && memo.has(url)) return memo.get(url);
+  const j = await apiFetch(url);
+  memo.set(url, j);
+  return j;
+}
+async function apiFetch(url) {
   let r;
   try { r = await fetch(url, { headers: { accept: 'application/json' } }); } catch (e) {
     throw new Error(API_BASE ? `連不上代理（Apps Script）。可能是網路中斷，或代理剛部署、擁有者尚未在 Apps Script 編輯器執行 setup 授權一次（${e.message}）` : `連不上資料來源（${e.message}）`);
@@ -65,11 +74,15 @@ async function api(route, d) {
   return j;
 }
 
+// 當週禱研背進度：中文／English／中英各自的說法（中文仍稱「禱背」，英文一律 pray-reading, reciting）
+const WEEK_ZH = '當週禱研背進度', WEEK_EN = 'This week’s pray-reading, reciting progress';
+const byLang = (zh, en) => settings.lang === 'zh' ? zh : settings.lang === 'en' ? en : `${zh}　${en}`;
+
 const md = (date) => { const [, m, d] = date.split('-'); return `${+m}/${+d}`; };
 const weekZh = (n) => '〇一二三四五六七八九十'[n] ?? n;
 
 function show(...nodes) { $app.replaceChildren(...nodes.flat(Infinity).filter(n => n != null && n !== '' && n !== false)); window.scrollTo(0, 0); }
-function loading(msg) { show(el('p', { class: 'loading', text: msg }), API_BASE ? el('p', { class: 'loading-sub', text: '第一次讀取本週資料時，代理要即時抓取來源，約需 10～30 秒。' }) : ''); }
+function loading(msg) { if (reuse) return; show(el('p', { class: 'loading', text: msg }), API_BASE ? el('p', { class: 'loading-sub', text: '第一次讀取本週資料時，代理要即時抓取來源，約需 10～30 秒。' }) : ''); }
 function fail(e) {
   show(el('p', { class: 'error', role: 'alert', 'data-testid': 'error', text: `取不到資料：${e.message}` }),
     el('p', { class: 'center' }, el('button', { type: 'button', class: 'btn press', onclick: () => route() }, '重新載入')));
@@ -126,7 +139,7 @@ async function home() {
     el('span', { class: 'd-go', 'aria-hidden': 'true', text: '›' }))));
 
   const card = el('section', { class: 'hcard week-card', id: 'week-card', 'aria-labelledby': 'wk-h' },
-    el('span', { class: 'hc-label', text: '當週進度' }),
+    el('span', { class: 'hc-label', text: byLang(WEEK_ZH, WEEK_EN) }),
     el('h2', { id: 'wk-h', text: week.message?.title || wk }),
     el('p', { class: 'wk-meta', text: `${week.range}　${week.training}${week.englishTitle ? `　·　${week.englishTitle}` : ''}` }),
     list);
@@ -194,12 +207,12 @@ function prayerBlock(p, week) {
     p.outline ? [el('span', { class: 'p-ref', text: `禱背綱要　${p.outlineRef}` }), el('strong', { class: 'p-text pray-outline', text: p.outline })] : '',
     p.verse ? [el('span', { class: 'p-ref', text: `禱背經文　${p.verseRef}` }), el('strong', { class: 'p-text pray-verse', text: p.verse })] : ''];
   const en = [
-    el('span', { class: 'p-ref', text: 'Prayer outline' }),
+    el('span', { class: 'p-ref', text: 'Pray-reading, reciting outline' }),
     p?.en ? [el('strong', { class: 'p-text pray-outline-en', text: p.en.text }), el('span', { class: 'p-note', text: `對應官方英文綱目第 ${p.en.path} 點（禱背表格本身只有中文）` })]
       : missing(p ? '暫缺：英文綱目對不上這個出處，或英文綱目取不到。' : '暫缺'),
-    el('span', { class: 'p-ref', text: 'Prayer verse' }),
+    el('span', { class: 'p-ref', text: 'Pray-reading, reciting verses' }),
     missing('來源無英文（每週PSRP 表格只有中文禱背經文）。')];
-  return block('pray', '禱背', 'Prayer & Recitation', zh, en, { 'aria-label': '今日禱背' });
+  return block('pray', '禱背', 'Pray-reading, reciting', zh, en, { 'aria-label': '今日禱背' });
 }
 
 // ---------- 每日頁 ----------
@@ -211,7 +224,7 @@ async function day(which) {
   const { week, day: d } = j;
   document.title = Z(`${d.weekday} ${md(d.date)}｜中英晨興聖言 TODAY`);
   const head = el('header', { class: 'day-head' },
-    el('span', { class: 'hc-label', text: which === 'today' ? '今日晨興聖言' : '當週進度' }),
+    el('span', { class: 'hc-label', text: which === 'today' ? '今日晨興聖言' : byLang(WEEK_ZH, WEEK_EN) }),
     el('h1', { 'data-testid': 'day-title', text: `第${weekZh(week.weekNo)}週・${d.weekday}　${md(d.date)}` }),
     settings.lang !== 'en' ? el('p', { class: 'msg-zh', text: week.message?.title || week.sheetTitle || '' }) : '',
     settings.lang !== 'zh' && week.englishTitle ? el('p', { class: 'msg-en', lang: 'en', text: `Week ${week.weekNo}: ${week.englishTitle}` }) : '');
@@ -234,7 +247,7 @@ async function day(which) {
   const next = d.day < 6 ? `#/day/${d.day + 1}` : '#/outline';
   const nav = el('nav', { class: 'daynav', 'aria-label': '本週其他天' },
     el('a', { href: prev, class: 'press', 'aria-disabled': String(d.day <= 1) }, '‹ 前一天'),
-    el('a', { href: '#/', class: 'press' }, '當週進度'),
+    el('a', { href: '#/', class: 'press' }, WEEK_ZH),
     el('a', { href: next, class: 'press' }, d.day < 6 ? '後一天 ›' : '主日綱要 ›'));
   show(head, ...notes, langSeg(), blocks, nav, sourcesLine(week, d));
 }
@@ -250,7 +263,7 @@ function sourcesLine(week, d) {
 /** 語言切換（中文／English／中英），存成設定後重畫 */
 function langSeg() {
   return el('div', { class: 'seg', role: 'group', 'aria-label': '顯示語言', id: 'lang-seg' },
-    LANGS.map(([v, label]) => el('button', { type: 'button', 'data-v': v, 'aria-pressed': String(settings.lang === v), onclick: () => { saveSetting('lang', v); route(); } }, label)));
+    LANGS.map(([v, label]) => el('button', { type: 'button', 'data-v': v, 'aria-pressed': String(settings.lang === v), onclick: () => { saveSetting('lang', v); redraw(); } }, label)));
 }
 
 // ---------- 主日／本週完整綱要 ----------
@@ -273,7 +286,7 @@ function outlineView(j, sundayToday) {
     : missing(`暫缺${srcErr(week, 'outlineEn')}`);
   const blocks = [block('full-outline', '本週完整綱要', 'Full Outline', zh, en)];
   if (j.prayers) {
-    blocks.push(block('week-pray', '本週禱背', 'Prayer & Recitation (this week)',
+    blocks.push(block('week-pray', '本週禱背', 'Pray-reading, reciting (this week)',
       j.prayers.map(x => el('div', { class: 'wp' }, el('a', { href: `#/day/${x.day}`, class: 'wp-day', text: `${x.weekday} ${md(x.date)}` }),
         x.prayer ? [el('span', { class: 'p-ref', text: `${x.prayer.outlineRef}｜${x.prayer.verseRef}` }), el('strong', { class: 'p-text', text: x.prayer.verse || x.prayer.outline })] : missing('暫缺'))),
       missing('來源無英文（每週PSRP 表格只有中文）。')));
@@ -304,6 +317,8 @@ function settingsView() {
 
 // ---------- 路由 ----------
 let current = '';
+/** 同一頁只換顯示方式：用記住的資料重畫 */
+function redraw() { reuse = true; return route(); }
 export async function route() {
   const h = location.hash || '#/';
   current = h;
@@ -316,6 +331,7 @@ export async function route() {
     else if (h === '#/settings') settingsView();
     else { await home(); if (current === h) maybeStartTour(); }
   } catch (e) { fail(e); if (h === '#/' || h === '') maybeStartTour(); }
+  finally { reuse = false; }
 }
 initTour({ Z, el });
 addEventListener('hashchange', route);

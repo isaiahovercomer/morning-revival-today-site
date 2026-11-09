@@ -9,9 +9,9 @@ const visible = (el) => el && el.getClientRects().length > 0 && !el.closest('[hi
 
 const STEPS = [
   { id: 'today', target: () => $('#today-btn'), title: '今日晨興聖言',
-    text: '每天打開點這裡：當天的禱背、綱目、晨興餵養、信息選讀，中文與 English 一一對照。主日則顯示本週完整綱要。' },
-  { id: 'week', target: () => $('#daylist'), title: '當週進度',
-    text: '週一到週六每一天都能點進去看，標「今天」的是今天；最下面「主日」是本週完整綱要。' },
+    text: '每天打開點這裡：當天的禱背（pray-reading, reciting）、綱目、晨興餵養、信息選讀，中文與 English 一一對照。主日則顯示本週完整綱要。' },
+  { id: 'week', target: () => $('#daylist'), title: '當週禱研背進度',
+    text: '本週禱研背進度（英文 pray-reading, reciting）：週一到週六每天的禱背出處，點進去看當天內容；標「今天」的是今天，最下面「主日」是本週完整綱要。' },
   { id: 'outline', target: () => $('#tabbar [data-tab="outline"]'), title: '本週綱要',
     text: '整篇綱要（中文＋官方英文綱目）一次看完。' },
   { id: 'settings', target: () => $('#tabbar [data-tab="settings"]'), title: '設定',

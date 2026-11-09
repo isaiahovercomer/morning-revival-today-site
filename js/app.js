@@ -6,6 +6,7 @@ import { makeConv } from './zhconv.js';
 import { maybeStartTour, replayTour, initTour, tourActive } from './tour.js';
 import { isFresh, sameContent, getLocal, putLocal, pruneLocal } from './store.js';
 import { rcvLink } from './rcv.js';
+import { applyWordBreaks, LEXICON } from './wrap.js';
 
 const $app = document.getElementById('app');
 const $back = document.getElementById('back');
@@ -36,6 +37,13 @@ async function ensureScript() {
 }
 /** 介面與內容的中文：簡中模式轉簡體；其他原樣 */
 export const Z = (s) => (settings.script === 'cn' && t2s ? t2s(s) : String(s ?? ''));
+/** 按鈕、標題只在詞與詞之間換行（js/wrap.js）；簡中模式詞庫也轉簡體 */
+let lexCn = null;
+export function wb(root) {
+  const cn = settings.script === 'cn' && t2s;
+  if (cn && !lexCn) lexCn = [...LEXICON, ...LEXICON.map(t2s)];
+  applyWordBreaks(root, cn ? lexCn : LEXICON, cn ? 'zh-Hans' : 'zh-Hant');
+}
 
 export function el(tag, attrs = {}, ...kids) {
   const n = document.createElement(tag);
@@ -122,6 +130,7 @@ const weekZh = (n) => '〇一二三四五六七八九十'[n] ?? n;
 
 function show(...nodes) {
   $app.replaceChildren(...nodes.flat(Infinity).filter(n => n != null && n !== '' && n !== false));
+  wb($app);
   if (!quiet) window.scrollTo(0, 0);
   if (!$app.querySelector('.loading') && !performance.getEntriesByName('mrt-content').length) performance.mark('mrt-content'); // 首次內容出現時間（test:live 量測用）
 }
@@ -155,7 +164,8 @@ function chrome(view) {
     tab('outline', '#/outline', '☰', '本週綱要'),
     tab('settings', '#/settings', '⚙', '設定'),
     el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer', class: 'tab tab-ext press', 'data-tab': 'bible', 'data-testid': 'bible-link', 'aria-label': '原文聖經（另開新分頁）' },
-      el('span', { class: 'tab-ic', 'aria-hidden': 'true', text: '✝' }), el('span', { class: 'tab-t', text: '原文聖經 ↗' })));
+      el('span', { class: 'tab-ic', 'aria-hidden': 'true', text: '✝' }), el('span', { class: 'tab-t', text: '原文聖經\u00a0↗' })));
+  wb(document.querySelector('.topbar')); wb(document.getElementById('tabbar'));
 }
 
 // ---------- 首頁 ----------
@@ -295,6 +305,7 @@ function collapsible(sec, key, h2, body) {
     const open = btn.getAttribute('aria-expanded') === 'true';
     btn.textContent = settings.lang === 'en' ? (open ? 'Collapse' : 'Expand') : Z(open ? '收合' : '展開');
     body.hidden = !open; sec.classList.toggle('closed', !open); openState.set(key, open);
+    wb(btn);
   };
   btn.addEventListener('click', () => { btn.setAttribute('aria-expanded', String(btn.getAttribute('aria-expanded') !== 'true')); paint(); });
   sec.append(el('header', { class: 'blk-head' }, h2, btn), body);
@@ -318,6 +329,18 @@ function rcvAnchor(ref) {
   const r = rcvLink(ref);
   return r ? el('p', { class: 'rcv' }, el('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', 'data-testid': 'rcv-link', lang: 'en', text: `Open ${r.book} ${r.chapter} in the Recovery Version ↗` })) : '';
 }
+// 禱背經文英文（t110u）：代理依出處從附經文英文綱目逐節取，對不齊用當天 Morning Nourishment；都沒有才放 RcV 外連
+const VERSE_SRC = {
+  'outline-verses': ['取自官方附經文英文綱目（Outlines with Verses），依禱背經文出處逐節對應', 'From the official Outlines with Verses, matched verse by verse to the reference'],
+  nourishment: ['取自當天 Morning Nourishment 的同一處經文', 'From the same passage in today’s Morning Nourishment'],
+};
+function enVerses(p) {
+  const v = p?.verseEn;
+  if (!v?.verses?.length) return [missing(p?.verseRef ? '暫缺：附經文英文綱目與當天 Morning Nourishment 都對不到這處經文。' : '暫缺'), rcvAnchor(p?.verseRef)];
+  return [v.verses.map(x => el('strong', { class: 'p-text pray-verse pray-verse-en', 'data-testid': 'pray-verse-en', 'data-ref': x.ref },
+    v.verses.length > 1 ? el('span', { class: 'p-vno', text: `${x.ref.replace(/^.*:/, '')} ` }) : '', x.text)),
+  el('span', { class: 'p-note', 'data-testid': 'verse-src', 'data-src': v.source, text: VERSE_SRC[v.source] ? enOr(...VERSE_SRC[v.source]) : '' })];
+}
 function prayerBlock(p, week) {
   let zh;
   if (!p || (!p.outline && !p.verse)) zh = missing(`禱背暫缺${srcErr(week, 'sheet')}`);
@@ -328,9 +351,8 @@ function prayerBlock(p, week) {
     el('span', { class: 'p-ref', text: 'Pray-reading, reciting outline' }),
     p?.en ? [el('strong', { class: 'p-text pray-outline-en', text: p.en.text }), el('span', { class: 'p-note', text: `對應官方英文綱目第 ${p.en.path} 點（禱背表格本身只有中文）` })]
       : missing(p ? '暫缺：英文綱目對不上這個出處，或英文綱目取不到。' : '暫缺'),
-    el('span', { class: 'p-ref', text: 'Pray-reading, reciting verses' }),
-    missing('來源無英文（每週PSRP 表格只有中文禱背經文）。'),
-    rcvAnchor(p?.verseRef)];
+    el('span', { class: 'p-ref', text: `Pray-reading, reciting verses${p?.verseEn ? `　${p.verseEn.ref}` : ''}` }),
+    enVerses(p)];
   return block('pray', '禱背', 'Pray-reading, reciting', zh, en, { 'aria-label': '今日禱背' });
 }
 
@@ -400,7 +422,9 @@ function outlineView(j, sundayToday) {
     blocks.push(block('week-pray', '本週禱背', 'Pray-reading, reciting (this week)',
       j.prayers.map(x => el('div', { class: 'wp' }, el('a', { href: `#/day/${x.day}`, class: 'wp-day', text: `${x.weekday} ${md(x.date)}` }),
         x.prayer ? [el('span', { class: 'p-ref', text: `${x.prayer.outlineRef}｜${x.prayer.verseRef}` }), el('strong', { class: 'p-text', text: x.prayer.verse || x.prayer.outline })] : missing('暫缺'))),
-      missing('來源無英文（每週PSRP 表格只有中文）。')));
+      j.prayers.map(x => el('div', { class: 'wp', lang: 'en' }, el('a', { href: `#/day/${x.day}`, class: 'wp-day', text: `${DAY_EN[x.day]} ${md(x.date)}` }),
+        x.prayer?.verseEn ? [el('span', { class: 'p-ref', text: x.prayer.verseEn.ref }), x.prayer.verseEn.verses.map(v => el('strong', { class: 'p-text pray-verse-en', text: v.text }))]
+          : [missing('暫缺'), rcvAnchor(x.prayer?.verseRef)]))));
   }
   const nav = el('nav', { class: 'daynav', 'aria-label': '本週每一天' }, [1, 2, 3, 4, 5, 6].map(n => el('a', { href: `#/day/${n}`, class: 'press' }, '一二三四五六'[n - 1])));
   show(head, ...notes, langSeg(), blocks, nav);
@@ -453,7 +477,7 @@ export async function route() {
   finally { reuse = false; }
 }
 applyTheme();
-initTour({ Z, el });
+initTour({ Z, el, wb });
 idle(() => pruneLocal());
 addEventListener('hashchange', route);
 route();

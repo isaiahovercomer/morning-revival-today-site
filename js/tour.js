@@ -26,7 +26,7 @@ const STEPS = [
     text: '加到手機主畫面後就像 App 一樣，每天一點就開。首頁每張卡片和內容區塊都可以「收合／展開」，預設全部展開。' },
 ];
 
-let hooks = { Z: (s) => s, el: null };
+let hooks = { Z: (s) => s, el: null, wb: () => {} };
 export function initTour(h) { hooks = { ...hooks, ...h }; }
 const seen = () => { try { return +localStorage.getItem(KEY) >= TOUR_VERSION; } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem(KEY, String(TOUR_VERSION)); } catch {} };
@@ -120,6 +120,7 @@ function render() {
   a.countEl.textContent = `${n} / ${total}`;
   a.prevBtn.disabled = n <= 1;
   a.nextBtn.textContent = a.Z(last ? '完成' : '下一步');
+  hooks.wb(a.bubble);
   a.live.textContent = a.Z(`第 ${n} 步，共 ${total} 步。${s.title}。${s.text}`);
   a.nextBtn.focus({ preventScroll: true });
   a.key = '';

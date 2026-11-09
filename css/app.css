@@ -76,8 +76,10 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .today-btn .tb-kicker { display: block; font: 600 12px var(--ui); color: var(--chrome-accent); letter-spacing: .16em; margin-bottom: 6px; }
 .today-btn .tb-go { position: absolute; right: 18px; top: 50%; margin-top: -16px; font: 32px/1 var(--ui); color: var(--chrome-accent); }
 
-.week-card { margin-top: 16px; padding: 16px 18px 6px; }
-.week-card h2 { font: 600 17px/1.4 var(--serif-zh); margin: 6px 0 2px; }
+.week-card { margin-top: 16px; padding: 8px 18px 6px; }
+.blk-title { flex: 1; min-width: 0; }
+.blk-head .blk-title h2, .week-card h2 { font: 600 17px/1.4 var(--serif-zh); margin: 6px 0 2px; }
+.week-card.closed { padding-bottom: 8px; }
 .week-card .wk-meta { font: 12px/1.6 var(--ui); color: var(--muted); margin: 0 0 6px; overflow-wrap: anywhere; }
 .daylist { list-style: none; margin: 0; padding: 0; }
 .daylist li + li { border-top: .5px solid var(--line); }
@@ -203,6 +205,22 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .psrp-verse { color: var(--psrp-verse); }
 .psrp-i.psrp-verse { font-weight: 700; }
 .psrp-src { font: 12px/1.6 var(--ui); color: var(--muted); margin: 6px 0 0; overflow-wrap: anywhere; }
+
+/* 本週分段・段落要點（D1～D6 左側）：每段一列＝日子＋中欄小標／段落要點（粗體）／分段 */
+.seg-card { scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px)); }
+.seg-hint { font: 12px/1.6 var(--ui); color: var(--muted); margin: 0 0 4px; }
+.seg-list { margin: 0; padding: 0; list-style: none; }
+.seg-i { padding: 10px 0 12px; }
+.seg-i + .seg-i { border-top: .5px solid var(--line); }
+.seg-i.is-today { background: var(--accent-soft); margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: 12px; border-top-color: transparent; }
+.seg-i.is-today + .seg-i { border-top-color: transparent; }
+.seg-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font: 13px/1.6 var(--ui); }
+.seg-day { font: 600 15px/1.5 var(--serif-zh); color: var(--fg); }
+.seg-d { color: var(--muted); font-size: 12px; letter-spacing: .04em; }
+.seg-mid { margin-left: auto; padding: 0 9px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); font: 600 12px/1.6 var(--ui); letter-spacing: .06em; }
+.seg-point { display: block; margin-top: 4px; font: 700 17px/1.6 var(--serif-zh); color: var(--psrp-outline); }
+.seg-text { margin: 4px 0 0; font-size: 15px; line-height: 1.75; color: var(--fg2); text-align: justify; }
+.d-today { margin-left: 2px; font: 600 10px/1.6 var(--ui); color: var(--accent-fg); background: var(--accent); border-radius: 99px; padding: 1px 6px; }
 .status p { margin: 0 0 4px; }
 .status .errs { margin: 4px 0 0; padding-left: 18px; color: var(--bad); }
 .btn {
@@ -210,6 +228,9 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
   font: 600 14px/40px var(--ui); text-decoration: none;
 }
 .install { margin-top: 16px; padding: 14px 18px; }
+.install .blk-head { padding: 0; }
+.install .hc-label { flex: 1; }
+.install .blk-body { padding-top: 0; }
 .install p { font: 14px/1.6 var(--ui); color: var(--fg2); margin: 6px 0 10px; }
 .set-card { margin-top: 8px; padding: 6px 18px 18px; }
 .set-card h2 { font: 600 15px/1.4 var(--serif-zh); margin: 18px 0 2px; }

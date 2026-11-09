@@ -113,7 +113,7 @@ async function home() {
   chrome('home');
   document.title = Z('中英晨興聖言 TODAY');
   loading('載入本週進度…');
-  const { week, today, days, psrp } = await api('week');
+  const { week, today, days, psrp, segments } = await api('week');
   const todayDay = days.find(d => d.day === today.day);
   const wk = `第${weekZh(week.weekNo)}週`;
   const head = el('header', { class: 'home-head' },
@@ -138,13 +138,53 @@ async function home() {
     el('span', { class: 'd-ref', text: '本週完整綱要（中英）' }),
     el('span', { class: 'd-go', 'aria-hidden': 'true', text: '›' }))));
 
-  const card = el('section', { class: 'hcard week-card', id: 'week-card', 'aria-labelledby': 'wk-h' },
-    el('span', { class: 'hc-label', text: byLang(WEEK_ZH, WEEK_EN) }),
-    el('h2', { id: 'wk-h', text: week.message?.title || wk }),
-    el('p', { class: 'wk-meta', text: `${week.range}　${week.training}${week.englishTitle ? `　·　${week.englishTitle}` : ''}` }),
-    list);
+  const card = collapsible(el('section', { class: 'hcard week-card', id: 'week-card', 'data-testid': 'week', 'aria-labelledby': 'wk-h' }), 'week',
+    el('div', { class: 'blk-title' },
+      el('span', { class: 'hc-label', text: byLang(WEEK_ZH, WEEK_EN) }),
+      el('h2', { id: 'wk-h', text: week.message?.title || wk })),
+    el('div', { class: 'blk-body', id: 'week-body' },
+      el('p', { class: 'wk-meta', text: `${week.range}　${week.training}${week.englishTitle ? `　·　${week.englishTitle}` : ''}` }),
+      list));
 
-  show(head, btn, card, psrpCard(psrp, week), installCard(), statusLine(week));
+  // 今日大按鈕是主要動作（不是內容卡），不做收合；其餘首頁卡片都可收合、預設展開
+  show(head, btn, card, segCard(segments, week, today), psrpCard(psrp, week), installCard(), statusLine(week));
+}
+
+// 本週分段・段落要點：每週PSRP 表格 D1～D6 左側「分段」「段落要點」兩欄＋中欄（啟示／應用／結果）。
+// 手機一張卡：每段一列＝日子｜中欄小標｜段落要點（粗體）｜分段（內文）；三欄全空的天併入上一段（例「週一～週二」）。
+const SEG_ZH = '本週分段・段落要點', SEG_EN = 'This week’s segments & key points';
+const DAY_EN = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MID_EN = { 啟示: 'Revelation', 應用: 'Application', 結果: 'Result', 目標: 'Goal', 經歷: 'Experience', 原則: 'Principle', 背景: 'Background', 引言: 'Introduction' };
+function segGroups(items) {
+  const out = [];
+  for (const it of items || []) {
+    const prev = out[out.length - 1];
+    if (prev && !it.seg && !it.point && !it.mid) prev.to = it.day;
+    else out.push({ ...it, from: it.day, to: it.day });
+  }
+  return out;
+}
+function segCard(segments, week, today) {
+  const groups = segGroups(segments?.items);
+  const dayName = (d) => settings.lang === 'en' ? DAY_EN[d] : `週${'一二三四五六'[d - 1]}`;
+  const span = (g) => g.from === g.to ? dayName(g.from) : `${dayName(g.from)}～${settings.lang === 'en' ? DAY_EN[g.to] : '一二三四五六'[g.to - 1]}`;
+  const midText = (m) => m.split('／').map(x => settings.lang === 'en' ? MID_EN[x] || x : settings.lang === 'both' && MID_EN[x] ? `${x} ${MID_EN[x]}` : x).join('／');
+  const isToday = (g) => !today.sunday && today.day >= g.from && today.day <= g.to;
+  const body = el('div', { class: 'blk-body', id: 'seg-body' },
+    el('p', { class: 'seg-hint', text: byLang('粗體＝段落要點，下方＝分段；取自每週PSRP 表格 D1～D6 左側。',
+      'Bold = key point, below = segment; from the left of the D1–D6 rows of the weekly PSRP table. The source is in Chinese only.') }),
+    groups.length
+      ? el('ol', { class: 'seg-list', 'data-testid': 'seg-list' }, groups.map(g => el('li', { class: `seg-i${isToday(g) ? ' is-today' : ''}`, 'data-from': g.from, 'data-to': g.to },
+        el('div', { class: 'seg-meta' },
+          el('span', { class: 'seg-day', text: span(g) }),
+          el('span', { class: 'seg-d', text: g.from === g.to ? `D${g.from}` : `D${g.from}–D${g.to}` }),
+          isToday(g) ? el('span', { class: 'd-today', text: settings.lang === 'en' ? 'Today' : '今天' }) : '',
+          g.mid ? el('span', { class: 'seg-mid', 'data-testid': 'seg-mid', text: midText(g.mid) }) : ''),
+        g.point ? el('strong', { class: 'seg-point', lang: 'zh-Hant', text: g.point }) : '',
+        g.seg ? el('p', { class: 'seg-text', lang: 'zh-Hant', text: g.seg }) : '')))
+      : missing(`分段・段落要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的 D1～D6 左側還沒有填）' : srcErr(week, 'sheet')}`));
+  return collapsible(el('section', { class: 'hcard blk seg-card', id: 'seg-card', 'data-testid': 'seg', 'aria-labelledby': 'seg-h' }),
+    'seg', el('h2', { id: 'seg-h', text: byLang(SEG_ZH, SEG_EN) }), body);
 }
 
 // 本週PSRP要點：每週PSRP 表格 D1～D6 下面的文字，代理分成指引／綱目／經文三類（tools/lib.mjs classifyPsrp）
@@ -183,13 +223,15 @@ function statusLine(week) {
 let installEvt = null;
 addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; document.querySelectorAll('[data-install]').forEach(b => { b.hidden = false; }); });
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-function installCard() {
+function installCard(collapsibleInstall = true) {
   if (standalone()) return '';
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  return el('section', { class: 'hcard install', id: 'install-card' },
-    el('span', { class: 'hc-label', text: '加到主畫面' }),
+  const nodes = [
     el('p', { text: ios ? '用 Safari 開啟 → 點「分享」→「加入主畫面」，之後就像 App 一樣一點就開。' : '加到主畫面後就像 App 一樣，一點就開今日晨興聖言。' }),
-    el('button', { type: 'button', class: 'btn press', 'data-install': '', hidden: !installEvt, onclick: async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; } }, '安裝到主畫面'));
+    el('button', { type: 'button', class: 'btn press', 'data-install': '', hidden: !installEvt, onclick: async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; } }, '安裝到主畫面')];
+  if (!collapsibleInstall) return el('section', { class: 'hcard install', id: 'install-card' }, el('span', { class: 'hc-label', text: '加到主畫面' }), nodes);
+  return collapsible(el('section', { class: 'hcard install', id: 'install-card', 'data-testid': 'install' }), 'install',
+    el('span', { class: 'hc-label', text: byLang('加到主畫面', 'Add to Home Screen') }), el('div', { class: 'blk-body', id: 'install-body' }, nodes));
 }
 
 // ---------- 可收合的內容區塊（預設展開） ----------
@@ -202,10 +244,18 @@ function block(key, titleZh, titleEn, zhNodes, enNodes, extra = {}) {
   if (settings.lang !== 'zh') body.append(el('div', { class: 'part part-en', lang: 'en', 'data-part': 'en' }, settings.lang === 'both' ? el('span', { class: 'part-tag', text: 'ENGLISH' }) : '', enNodes));
   return collapsible(el('section', { class: `hcard blk blk-${key}`, 'data-block': key, 'data-testid': `blk-${key}`, ...extra }), key, el('h2', { text: title }), body);
 }
-/** 卡片加上「收合／展開」按鈕（預設展開） */
+/**
+ * 卡片加上「收合／展開」按鈕（預設展開）。只切換語言的重畫（redraw）沿用收合狀態；換頁或重新載入一律回到展開。
+ * 按鈕字：中文「收合／展開」，English「Collapse／Expand」，中英只用中文（標題已並列）。
+ */
+const openState = new Map();
 function collapsible(sec, key, h2, body) {
-  const btn = el('button', { type: 'button', class: 'blk-toggle press', 'aria-expanded': 'true', 'aria-controls': body.id, 'data-testid': `toggle-${key}` });
-  const paint = () => { const open = btn.getAttribute('aria-expanded') === 'true'; btn.textContent = Z(open ? '收合' : '展開'); body.hidden = !open; sec.classList.toggle('closed', !open); };
+  const btn = el('button', { type: 'button', class: 'blk-toggle press', 'aria-expanded': String(openState.get(key) ?? true), 'aria-controls': body.id, 'data-testid': `toggle-${key}` });
+  const paint = () => {
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    btn.textContent = settings.lang === 'en' ? (open ? 'Collapse' : 'Expand') : Z(open ? '收合' : '展開');
+    body.hidden = !open; sec.classList.toggle('closed', !open); openState.set(key, open);
+  };
   btn.addEventListener('click', () => { btn.setAttribute('aria-expanded', String(btn.getAttribute('aria-expanded') !== 'true')); paint(); });
   sec.append(el('header', { class: 'blk-head' }, h2, btn), body);
   paint();
@@ -333,7 +383,7 @@ function settingsView() {
       seg('script', SCRIPTS, '繁體或簡體', 'zh-set'),
       el('h2', { text: '使用教學' }),
       el('button', { type: 'button', class: 'btn press', id: 'tour-replay', onclick: () => { location.hash = '#/'; setTimeout(() => replayTour(), 50); } }, '重新觀看使用教學'),
-      el('h2', { text: '加到主畫面' }), installCard() || el('p', { class: 'set-hint', text: '已經以 App 模式開啟。' }),
+      el('h2', { text: '加到主畫面' }), installCard(false) || el('p', { class: 'set-hint', text: '已經以 App 模式開啟。' }),
       el('h2', { text: '其他' }),
       el('p', {}, el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer' }, '原文對照聖經 ↗'))));
 }
@@ -345,6 +395,7 @@ function redraw() { reuse = true; return route(); }
 export async function route() {
   const h = location.hash || '#/';
   current = h;
+  if (!reuse) openState.clear();
   try {
     await ensureScript();
     const m = /^#\/day\/([1-6])$/.exec(h);

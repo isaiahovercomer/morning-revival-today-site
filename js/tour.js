@@ -12,6 +12,8 @@ const STEPS = [
     text: '每天打開點這裡：當天的禱背（pray-reading, reciting）、綱目、晨興餵養、信息選讀，中文與 English 一一對照。主日則顯示本週完整綱要。' },
   { id: 'week', target: () => $('#daylist'), title: '當週禱研背進度',
     text: '本週禱研背進度（英文 pray-reading, reciting）：週一到週六每天的禱背出處，點進去看當天內容；標「今天」的是今天，最下面「主日」是本週完整綱要。' },
+  { id: 'seg', target: () => $('#seg-card .blk-head'), title: '本週分段・段落要點',
+    text: '每週PSRP 表格 D1～D6 左側的「分段」與「段落要點」（英文 segments & key points）：每段一列，粗體是段落要點，下面是分段，右邊小標是啟示／應用／結果；今天那段會標出來。' },
   { id: 'psrp', target: () => $('#psrp-card .blk-head'), title: '本週PSRP要點',
     text: '每週PSRP 表格下面的帶領要點（英文 This week’s PSRP points），分三色：指引（帶領步驟）、綱目（綱目思路與要點）、經文（經文引用）；上方有顏色說明。' },
   { id: 'outline', target: () => $('#tabbar [data-tab="outline"]'), title: '本週綱要',
@@ -21,7 +23,7 @@ const STEPS = [
   { id: 'bible', target: () => $('#tabbar [data-tab="bible"]'), title: '原文聖經',
     text: '另開新分頁到「原文對照聖經」，查經文的希臘文、希伯來文原文。' },
   { id: 'install', target: () => $('#install-card'), title: '加到主畫面',
-    text: '加到手機主畫面後就像 App 一樣，每天一點就開。內容區塊都可以「收合／展開」，預設全部展開。' },
+    text: '加到手機主畫面後就像 App 一樣，每天一點就開。首頁每張卡片和內容區塊都可以「收合／展開」，預設全部展開。' },
 ];
 
 let hooks = { Z: (s) => s, el: null };

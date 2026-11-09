@@ -12,6 +12,8 @@ const STEPS = [
     text: '每天打開點這裡：當天的禱背（pray-reading, reciting）、綱目、晨興餵養、信息選讀，中文與 English 一一對照。主日則顯示本週完整綱要。' },
   { id: 'week', target: () => $('#daylist'), title: '當週禱研背進度',
     text: '本週禱研背進度（英文 pray-reading, reciting）：週一到週六每天的禱背出處，點進去看當天內容；標「今天」的是今天，最下面「主日」是本週完整綱要。' },
+  { id: 'psrp', target: () => $('#psrp-card .blk-head'), title: '本週PSRP要點',
+    text: '每週PSRP 表格下面的帶領要點（英文 This week’s PSRP points），分三色：指引（帶領步驟）、綱目（綱目思路與要點）、經文（經文引用）；上方有顏色說明。' },
   { id: 'outline', target: () => $('#tabbar [data-tab="outline"]'), title: '本週綱要',
     text: '整篇綱要（中文＋官方英文綱目）一次看完。' },
   { id: 'settings', target: () => $('#tabbar [data-tab="settings"]'), title: '設定',

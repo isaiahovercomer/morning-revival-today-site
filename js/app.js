@@ -113,7 +113,7 @@ async function home() {
   chrome('home');
   document.title = Z('中英晨興聖言 TODAY');
   loading('載入本週進度…');
-  const { week, today, days } = await api('week');
+  const { week, today, days, psrp } = await api('week');
   const todayDay = days.find(d => d.day === today.day);
   const wk = `第${weekZh(week.weekNo)}週`;
   const head = el('header', { class: 'home-head' },
@@ -144,7 +144,27 @@ async function home() {
     el('p', { class: 'wk-meta', text: `${week.range}　${week.training}${week.englishTitle ? `　·　${week.englishTitle}` : ''}` }),
     list);
 
-  show(head, btn, card, installCard(), statusLine(week));
+  show(head, btn, card, psrpCard(psrp, week), installCard(), statusLine(week));
+}
+
+// 本週PSRP要點：每週PSRP 表格 D1～D6 下面的文字，代理分成指引／綱目／經文三類（tools/lib.mjs classifyPsrp）
+const PSRP_ZH = '本週PSRP要點', PSRP_EN = 'This week’s PSRP points';
+const PSRP_TYPES = [['guide', '指引', 'Guide'], ['outline', '綱目', 'Outline'], ['verse', '經文', 'Verse']];
+function psrpCard(psrp, week) {
+  const label = Object.fromEntries(PSRP_TYPES.map(([k, zh, en]) => [k, byLang(zh, en)]));
+  const tag = Object.fromEntries(PSRP_TYPES.map(([k, zh, en]) => [k, settings.lang === 'en' ? en : zh])); // 每行小標：中英並列時只標中文，免得太長
+  const body = el('div', { class: 'blk-body', id: 'psrp-body' },
+    el('ul', { class: 'psrp-legend', 'data-testid': 'psrp-legend', 'aria-label': byLang('顏色說明', 'Colour key') },
+      PSRP_TYPES.map(([k]) => el('li', { class: `psrp-${k}` }, el('i', { 'aria-hidden': 'true' }), label[k]))),
+    el('p', { class: 'psrp-hint', text: byLang('依每週PSRP 表格下方的文字自動分類：指引＝帶領步驟（兩兩對說、禱讀…）；綱目＝綱目思路與各點要點；經文＝經文引用。',
+      'Auto-sorted from the text under the weekly PSRP table: Guide = leading steps; Outline = outline flow and points; Verse = scripture quoted. The source is in Chinese only.') }),
+    psrp?.items?.length
+      ? el('ul', { class: 'psrp-list', lang: 'zh-Hant' }, psrp.items.map(it => el('li', { class: `psrp-i psrp-${it.type}`, 'data-type': it.type },
+        el('span', { class: 'psrp-tag', text: tag[it.type] }), it.text)))
+      : missing(`本週PSRP要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的表格下面還沒有文字）' : srcErr(week, 'sheet')}`),
+    week.sources.sheet?.url ? el('p', { class: 'psrp-src' }, '來源：', el('a', { href: week.sources.sheet.url, target: '_blank', rel: 'noopener noreferrer', text: `每週PSRP 表格（${psrp?.tab || week.sources.sheet.tab || ''}）` })) : '');
+  return collapsible(el('section', { class: 'hcard blk psrp', id: 'psrp-card', 'data-testid': 'psrp', 'aria-labelledby': 'psrp-h' }),
+    'psrp', el('h2', { id: 'psrp-h', text: byLang(PSRP_ZH, PSRP_EN) }), body);
 }
 
 function statusLine(week) {
@@ -180,11 +200,14 @@ function block(key, titleZh, titleEn, zhNodes, enNodes, extra = {}) {
   const body = el('div', { class: 'blk-body', id });
   if (settings.lang !== 'en') body.append(el('div', { class: 'part part-zh', lang: 'zh-Hant', 'data-part': 'zh' }, zhNodes));
   if (settings.lang !== 'zh') body.append(el('div', { class: 'part part-en', lang: 'en', 'data-part': 'en' }, settings.lang === 'both' ? el('span', { class: 'part-tag', text: 'ENGLISH' }) : '', enNodes));
-  const btn = el('button', { type: 'button', class: 'blk-toggle press', 'aria-expanded': 'true', 'aria-controls': id, 'data-testid': `toggle-${key}` });
+  return collapsible(el('section', { class: `hcard blk blk-${key}`, 'data-block': key, 'data-testid': `blk-${key}`, ...extra }), key, el('h2', { text: title }), body);
+}
+/** 卡片加上「收合／展開」按鈕（預設展開） */
+function collapsible(sec, key, h2, body) {
+  const btn = el('button', { type: 'button', class: 'blk-toggle press', 'aria-expanded': 'true', 'aria-controls': body.id, 'data-testid': `toggle-${key}` });
   const paint = () => { const open = btn.getAttribute('aria-expanded') === 'true'; btn.textContent = Z(open ? '收合' : '展開'); body.hidden = !open; sec.classList.toggle('closed', !open); };
   btn.addEventListener('click', () => { btn.setAttribute('aria-expanded', String(btn.getAttribute('aria-expanded') !== 'true')); paint(); });
-  const sec = el('section', { class: `hcard blk blk-${key}`, 'data-block': key, 'data-testid': `blk-${key}`, ...extra },
-    el('header', { class: 'blk-head' }, el('h2', { text: title }), btn), body);
+  sec.append(el('header', { class: 'blk-head' }, h2, btn), body);
   paint();
   return sec;
 }

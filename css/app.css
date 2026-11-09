@@ -7,6 +7,9 @@
   --line: #E4DCCC; --edge: #8E8574; --accent: #8A6431; --accent-soft: rgba(196, 147, 86, .16);
   --hl: #F6E2B6; --capsule: #2F3343; --capsule-fg: #F7F1E4;
   --pray: #2F3343; /* 禱背：粗體＋系統暗藍 */
+  --bad: #B03A2E; --accent-fg: #fff;
+  /* 本週PSRP要點三類：指引（赭）／綱目（藍）／經文（綠）；淺色底對比皆 ≥ 6:1 */
+  --psrp-guide: #9A4512; --psrp-outline: #2A4D8F; --psrp-verse: #2D6A3A;
   --fs: 18px; --lh: 1.8;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --serif-zh: "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", "Noto Serif CJK SC", serif;
@@ -14,6 +17,17 @@
   --ui: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
   --card-shadow: 0 1px 2px rgba(60, 40, 20, .05), 0 8px 24px rgba(60, 40, 20, .06);
   color-scheme: light;
+}
+/* 深色主題（跟隨系統）：上下 chrome 不變，內容區換深底淺字 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17191F; --bg2: #23262F; --card: #1F2229; --fg: #ECE6DA; --fg2: #C9C3B6; --muted: #A39D91;
+    --line: #363A45; --edge: #5C5A55; --accent: #E0B074; --accent-soft: rgba(224, 176, 116, .16); --accent-fg: #1F2229;
+    --hl: #4A3E28; --pray: #F3EBDD; --bad: #F08A7E;
+    --psrp-guide: #F2A46E; --psrp-outline: #9FBDF5; --psrp-verse: #8ED39D;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--fg); }
@@ -39,7 +53,7 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .center { text-align: center; }
 .loading-sub { font: 12px/1.6 var(--ui); color: var(--muted); text-align: center; margin-top: -28px; }
 .loading, .error { font: 15px/1.6 var(--ui); color: var(--muted); padding: 40px 4px; text-align: center; }
-.error { color: #B03A2E; }
+.error { color: var(--bad); }
 
 /* ===== home ===== */
 .home-head { padding: 22px 4px 16px; }
@@ -73,11 +87,11 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .daylist .d-ref { flex: 1; min-width: 0; font: 13px/1.5 var(--ui); color: var(--fg2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .daylist .d-go { flex: none; color: var(--accent); }
 .daylist a.is-today { background: var(--accent-soft); margin: 0 -10px; padding-left: 12px; padding-right: 12px; border-radius: 12px; }
-.daylist .d-today { margin-left: 6px; font: 600 10px/1.6 var(--ui); color: #fff; background: var(--accent); border-radius: 99px; padding: 1px 6px; vertical-align: 2px; }
+.daylist .d-today { margin-left: 6px; font: 600 10px/1.6 var(--ui); color: var(--accent-fg); background: var(--accent); border-radius: 99px; padding: 1px 6px; vertical-align: 2px; }
 .daylist a.is-today .d-name { width: auto; min-width: 3.2em; }
 
 .status { margin-top: 14px; font: 12px/1.7 var(--ui); color: var(--muted); }
-.status .bad { color: #B03A2E; }
+.status .bad { color: var(--bad); }
 
 /* ===== day page ===== */
 .day-head { padding: 18px 2px 8px; }
@@ -173,8 +187,24 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .wp-day { font: 600 14px var(--ui); color: var(--accent); text-decoration: none; }
 
 .daynav a { min-width: 0; }
+
+/* ===== 首頁：本週PSRP要點（指引／綱目／經文三色＋圖例） ===== */
+.psrp { scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px)); }
+.psrp-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 2px 0 4px; padding: 0; list-style: none; font: 600 13px/1.6 var(--ui); }
+.psrp-legend li { display: flex; align-items: center; gap: 6px; }
+.psrp-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: currentColor; }
+.psrp-hint { font: 12px/1.6 var(--ui); color: var(--muted); margin: 0 0 8px; }
+.psrp-list { margin: 0; padding: 0; list-style: none; }
+.psrp-i { margin: 0 0 .55em; padding-left: 10px; border-left: 3px solid currentColor; line-height: 1.75; text-align: justify; }
+.psrp-tag { display: inline-block; margin-right: 6px; font: 600 11px/1.5 var(--ui); letter-spacing: .08em; vertical-align: 1px; }
+.psrp-guide { color: var(--psrp-guide); }
+.psrp-i.psrp-guide { font: 600 15px/1.7 var(--ui); margin-top: .9em; }
+.psrp-outline { color: var(--psrp-outline); }
+.psrp-verse { color: var(--psrp-verse); }
+.psrp-i.psrp-verse { font-weight: 700; }
+.psrp-src { font: 12px/1.6 var(--ui); color: var(--muted); margin: 6px 0 0; overflow-wrap: anywhere; }
 .status p { margin: 0 0 4px; }
-.status .errs { margin: 4px 0 0; padding-left: 18px; color: #B03A2E; }
+.status .errs { margin: 4px 0 0; padding-left: 18px; color: var(--bad); }
 .btn {
   display: inline-block; min-height: 40px; padding: 0 18px; border-radius: 99px; background: var(--chrome); color: var(--chrome-fg);
   font: 600 14px/40px var(--ui); text-decoration: none;

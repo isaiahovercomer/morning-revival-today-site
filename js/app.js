@@ -121,6 +121,9 @@ async function apiFetch(url) {
 
 // 當週禱研背進度：中文／English／中英各自的說法（中文仍稱「禱背」，英文一律 pray-reading, reciting）
 const WEEK_ZH = '當週禱研背進度', WEEK_EN = 'This week’s pray-reading, reciting progress';
+// 首頁三張內容卡標題前加「台中」（t112u）；每日頁標頭與 daynav 仍用不加前綴的 WEEK_ZH／WEEK_EN
+const HOME_ZH = '台中', HOME_EN = 'Taichung ';
+const homeTitle = (zh, en) => byLang(HOME_ZH + zh, HOME_EN + en);
 /** 只在 English 介面換英文（設定頁各標題維持中文；中英並列太長） */
 const enOr = (zh, en) => settings.lang === 'en' ? en : zh;
 const byLang = (zh, en) => settings.lang === 'zh' ? zh : settings.lang === 'en' ? en : `${zh}　${en}`;
@@ -200,7 +203,7 @@ async function home() {
 
   const card = collapsible(el('section', { class: 'hcard week-card', id: 'week-card', 'data-testid': 'week', 'aria-labelledby': 'wk-h' }), 'week',
     el('div', { class: 'blk-title' },
-      el('span', { class: 'hc-label', text: byLang(WEEK_ZH, WEEK_EN) }),
+      el('span', { class: 'hc-label', text: homeTitle(WEEK_ZH, WEEK_EN) }),
       el('h2', { id: 'wk-h', text: week.message?.title || wk })),
     el('div', { class: 'blk-body', id: 'week-body' },
       el('p', { class: 'wk-meta', text: `${week.range}　${week.training}${week.englishTitle ? `　·　${week.englishTitle}` : ''}` }),
@@ -245,7 +248,7 @@ function segCard(segments, week, today) {
         g.seg ? el('p', { class: 'seg-text', lang: 'zh-Hant', text: g.seg }) : '')))
       : missing(`分段・段落要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的 D1～D6 左側還沒有填）' : srcErr(week, 'sheet')}`));
   return collapsible(el('section', { class: 'hcard blk seg-card', id: 'seg-card', 'data-testid': 'seg', 'aria-labelledby': 'seg-h' }),
-    'seg', el('h2', { id: 'seg-h', text: byLang(SEG_ZH, SEG_EN) }), body);
+    'seg', el('h2', { id: 'seg-h', text: homeTitle(SEG_ZH, SEG_EN) }), body);
 }
 
 // 禱研背講要點：每週PSRP 表格 D1～D6 下面的文字，代理分成指引／綱目／經文三類（tools/lib.mjs classifyPsrp）
@@ -262,7 +265,7 @@ function psrpCard(psrp, week) {
         el('span', { class: 'psrp-tag', text: tag[it.type] }), it.text)))
       : missing(`禱研背講要點暫缺${week.sources.sheet?.ok ? '（試算表分頁的表格下面還沒有文字）' : srcErr(week, 'sheet')}`));
   return collapsible(el('section', { class: 'hcard blk psrp', id: 'psrp-card', 'data-testid': 'psrp', 'aria-labelledby': 'psrp-h' }),
-    'psrp', el('h2', { id: 'psrp-h', text: byLang(PSRP_ZH, PSRP_EN) }), body);
+    'psrp', el('h2', { id: 'psrp-h', text: homeTitle(PSRP_ZH, PSRP_EN) }), body);
 }
 
 // ---------- 加到主畫面 ----------

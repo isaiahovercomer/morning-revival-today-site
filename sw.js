@@ -1,6 +1,6 @@
 // Service worker：殼（HTML／CSS／JS／圖示）版本化預先快取；資料（本機 api/* 或 Apps Script 代理）network-first，
 // 離線時用最後一次成功的回應（只存在使用者自己的裝置）。「先顯示本地、背景更新」在 app 層（js/store.js，IndexedDB，換日／換週失效）。改了任何殼檔就要把 VERSION 加一（舊殼快取在 activate 時刪掉）。
-const VERSION = '2.6.0';
+const VERSION = '2.7.0';
 const SHELL_CACHE = `mrt-shell-${VERSION}`;
 const DATA_CACHE = 'mrt-data-v1';
 

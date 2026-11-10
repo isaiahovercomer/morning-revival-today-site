@@ -8,6 +8,7 @@ import { isFresh, sameContent, getLocal, putLocal, pruneLocal } from './store.js
 import { rcvLink } from './rcv.js';
 import { applyWordBreaks, LEXICON } from './wrap.js';
 import { isIOS, isStandalone, installKind, installCopy } from './install.js';
+import { icon } from './icons.js';
 
 const $app = document.getElementById('app');
 const $back = document.getElementById('back');
@@ -160,15 +161,17 @@ function chrome(view) {
   $back.textContent = Z('‹ 首頁');
   $back.hidden = view === 'home';
   document.getElementById('foot').replaceChildren(el('p', { text: FOOT }));
-  const tab = (key, href, icon, label) => el('a', { href, class: `tab press${view === key ? ' on' : ''}`, 'data-tab': key, ...(view === key ? { 'aria-current': 'page' } : {}) },
-    el('span', { class: 'tab-ic', 'aria-hidden': 'true', text: icon }), el('span', { class: 'tab-t', text: label }));
+  // 圖示是自繪 inline SVG（js/icons.js，aria-hidden）；可見文字標籤照舊
+  const tab = (key, href, label) => el('a', { href, class: `tab press${view === key ? ' on' : ''}`, 'data-tab': key, ...(view === key ? { 'aria-current': 'page' } : {}) },
+    icon(key, 'tab-ic'), el('span', { class: 'tab-t', text: label }));
   document.getElementById('tabbar').replaceChildren(
-    tab('home', '#/', '⌂', '首頁'),
-    tab('today', '#/today', '☀', '今日'),
-    tab('outline', '#/outline', '☰', '本週綱要'),
-    tab('settings', '#/settings', '⚙', '設定'),
+    tab('home', '#/', '首頁'),
+    tab('today', '#/today', '今日'),
+    tab('outline', '#/outline', '本週綱要'),
+    tab('settings', '#/settings', '設定'),
+    // 書形圖示右上已有外連箭頭，標籤不再加 ↗
     el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer', class: 'tab tab-ext press', 'data-tab': 'bible', 'data-testid': 'bible-link', 'aria-label': '原文聖經（另開新分頁）' },
-      el('span', { class: 'tab-ic', 'aria-hidden': 'true', text: '✝' }), el('span', { class: 'tab-t', text: '原文聖經\u00a0↗' })));
+      icon('bible', 'tab-ic'), el('span', { class: 'tab-t', text: '原文聖經' })));
   wb(document.querySelector('.topbar')); wb(document.getElementById('tabbar'));
 }
 
@@ -354,7 +357,7 @@ const srcErr = (week, k) => week.sources[k]?.error ? `（${week.sources[k].error
 // 英文經文：LSM 禁止下載／快取 Recovery Version 電子版（_research/RCV_TOS.md），只放外連，不抓不存
 function rcvAnchor(ref) {
   const r = rcvLink(ref);
-  return r ? el('p', { class: 'rcv' }, el('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', 'data-testid': 'rcv-link', lang: 'en', text: `Open ${r.book} ${r.chapter} in the Recovery Version ↗` })) : '';
+  return r ? el('p', { class: 'rcv' }, el('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', 'data-testid': 'rcv-link', lang: 'en', 'aria-label': `Open ${r.book} ${r.chapter} in the Recovery Version (opens in a new tab)` }, `Open ${r.book} ${r.chapter} in the Recovery Version`, icon('ext', 'ext-ic'))) : '';
 }
 // 禱背經文英文（t110u）：代理依出處從附經文英文綱目逐節取，對不齊用當天 Morning Nourishment；都沒有才放 RcV 外連。
 // 內容下方不放來源／說明灰色小字（t111u）
@@ -475,7 +478,7 @@ function settingsView() {
       el('button', { type: 'button', class: 'btn press', id: 'tour-replay', onclick: () => { location.hash = '#/'; setTimeout(() => replayTour(), 50); } }, '重新觀看使用教學'),
       el('h2', { id: 'install-set', raw: true, text: installText('menu').title }), installBody(),
       el('h2', { text: '其他' }),
-      el('p', {}, el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer' }, '原文對照聖經 ↗'))));
+      el('p', {}, el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer', 'aria-label': '原文對照聖經（另開新分頁）' }, '原文對照聖經', icon('ext', 'ext-ic')))));
 }
 
 function applyTheme() { document.documentElement.dataset.theme = settings.theme; }

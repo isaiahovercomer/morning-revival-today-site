@@ -9,6 +9,7 @@ export const LEXICON = [
   '今日', '今天', '主日', '原文', '聖經', '首頁', '設定', '收合', '展開', '分段', '段落', '主畫面', '加到', '安裝', '重新', '觀看', '使用', '教學',
   '上一步', '下一步', '略過', '完成', '前一天', '後一天', '一天', '重新載入', '載入', '顯示', '語言', '繁體', '簡體', '版面', '配色',
   '暖白', '白天', '護眼', '黑夜', '中英', '中文', '完整', '其他', '以撒', '亞伯拉罕', '分頁', '新分頁', '台中',
+  '加入', '分享', '應用程式', '瀏覽器', '選單', '圖示', '已安裝', '主屏幕', '添加', '共享',
 ];
 
 const CJK = /[㐀-鿿豈-﫿]/;
@@ -58,7 +59,7 @@ export function wordPieces(text, lex = LEXICON, locale = 'zh-Hant') {
 }
 
 // 套用範圍：所有按鈕、底部選單、今日大按鈕、卡片標題與小標、頁面標題、上一天／下一天
-export const WB_SELECTOR = 'button, .btn, .tab-t, .today-btn > span, .blk-head h2, .hc-label, .daynav a, .day-head h1, .home-head h1, .home-head p, .msg-zh, .tour-head h2, .topbar-back, .topbar-title, .seg-day, .wp-day';
+export const WB_SELECTOR = 'button, .btn, .set-card h2, .tab-t, .today-btn > span, .blk-head h2, .hc-label, .daynav a, .day-head h1, .home-head h1, .home-head p, .msg-zh, .tour-head h2, .topbar-back, .topbar-title, .seg-day, .wp-day';
 
 // 英文帶連字號的字（Pray-reading）包成不斷行的 span，免得在連字號處被拆開
 const HYPHENED = /[A-Za-z]+(?:[-‐][A-Za-z]+)+/;

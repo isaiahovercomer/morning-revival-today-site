@@ -245,9 +245,16 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 }
 .install { margin-top: 16px; padding: 14px 18px; }
 .install .blk-head { padding: 0; }
-.install .hc-label { flex: 1; }
 .install .blk-body { padding-top: 0; }
-.install p { font: 14px/1.6 var(--ui); color: var(--fg2); margin: 6px 0 10px; }
+/* 加到主畫面（t117u）：首頁卡與設定頁共用 .install-box；步驟用編號清單，按鈕沿用 .btn */
+.install-box p { font: 14px/1.6 var(--ui); color: var(--fg2); margin: 6px 0 10px; }
+.install-box .install-steps-lead { margin-bottom: 4px; font-weight: 600; color: var(--fg); }
+.install-box .install-note { color: var(--fg); padding: 8px 12px; border-radius: 12px; background: var(--accent-soft); }
+.install-box .btn { min-height: 44px; line-height: 1.4; padding: 10px 20px; text-align: center; }
+.install-box .set-hint { margin-top: 6px; }
+.install-steps { margin: 0 0 6px; padding-left: 1.6em; font: 14px/1.6 var(--ui); color: var(--fg2); }
+.install-steps li { padding: 2px 0; }
+.install-steps li::marker { color: var(--accent); font-weight: 600; }
 .set-card { margin-top: 8px; padding: 6px 18px 18px; }
 .set-card h2 { font: 600 15px/1.4 var(--serif-zh); margin: 18px 0 2px; }
 .set-hint { font: 13px/1.6 var(--ui); color: var(--muted); margin: 2px 0 8px; }
@@ -266,7 +273,6 @@ body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 .theme-set [data-v="eye"] .sw { background: #DCE9D3; }
 .theme-set [data-v="dark"] .sw { background: #17191F; }
 .rcv { margin: 4px 0 0; font: 13px/1.6 var(--ui); }
-.set-card .install { box-shadow: none; margin-top: 6px; }
 
 /* ===== 首次使用教學（js/tour.js）：遮罩＋聚光＋泡泡，色票同原文聖經 ===== */
 .tour { position: fixed; inset: 0; z-index: 1000; opacity: 0; transition: opacity 220ms var(--ease); --tour-dim: rgba(16, 18, 28, .72); }

@@ -2,7 +2,7 @@
 // 精神參考「原文對照聖經」js/tour.js：找不到目標的步驟自動跳過；Esc 略過；Tab 只在泡泡按鈕間移動。
 // 第一次進首頁時自動開始（localStorage mrt.tour）；設定 › 「重新觀看使用教學」可重播。
 const KEY = 'mrt.tour';
-const TOUR_VERSION = 1;
+const TOUR_VERSION = 2; // 2：t117u 加到主畫面步驟改寫（舊使用者再看一次）
 const PAD = 6, GAP = 14, EDGE = 12, WAIT = 2500;
 const $ = (s) => document.querySelector(s);
 const visible = (el) => el && el.getClientRects().length > 0 && !el.closest('[hidden]');
@@ -23,7 +23,7 @@ const STEPS = [
   { id: 'bible', target: () => $('#tabbar [data-tab="bible"]'), title: '原文聖經',
     text: '另開新分頁到「原文對照聖經」，查經文的希臘文、希伯來文原文。' },
   { id: 'install', target: () => $('#install-card'), title: '加到主畫面',
-    text: '加到手機主畫面後就像 App 一樣，每天一點就開。首頁每張卡片和內容區塊都可以「收合／展開」，預設全部展開。' },
+    text: '加到手機主畫面後就像 App 一樣，每天一點就開：這張卡有安裝按鈕或步驟，iPhone／iPad 用 Safari「分享 › 加入主畫面」；設定頁也有「加到主畫面」。首頁每張卡片都可以「收合／展開」，預設全部展開。' },
 ];
 
 let hooks = { Z: (s) => s, el: null, wb: () => {} };

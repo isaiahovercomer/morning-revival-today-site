@@ -7,6 +7,7 @@ import { maybeStartTour, replayTour, initTour, tourActive } from './tour.js';
 import { isFresh, sameContent, getLocal, putLocal, pruneLocal } from './store.js';
 import { rcvLink } from './rcv.js';
 import { applyWordBreaks, LEXICON } from './wrap.js';
+import { isIOS, isStandalone, installKind, installCopy } from './install.js';
 
 const $app = document.getElementById('app');
 const $back = document.getElementById('back');
@@ -268,19 +269,46 @@ function psrpCard(psrp, week) {
     'psrp', el('h2', { id: 'psrp-h', text: homeTitle(PSRP_ZH, PSRP_EN) }), body);
 }
 
-// ---------- 加到主畫面 ----------
-let installEvt = null;
-addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; document.querySelectorAll('[data-install]').forEach(b => { b.hidden = false; }); });
-const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-function installCard(collapsibleInstall = true) {
-  if (standalone()) return '';
-  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const nodes = [
-    el('p', { text: ios ? '用 Safari 開啟 → 點「分享」→「加入主畫面」，之後就像 App 一樣一點就開。' : '加到主畫面後就像 App 一樣，一點就開今日晨興聖言。' }),
-    el('button', { type: 'button', class: 'btn press', 'data-install': '', hidden: !installEvt, onclick: async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; } }, '安裝到主畫面')];
-  if (!collapsibleInstall) return el('section', { class: 'hcard install', id: 'install-card' }, el('span', { class: 'hc-label', text: '加到主畫面' }), nodes);
+// ---------- 加到主畫面（t117u；文案與偵測在 js/install.js） ----------
+// 首頁最下面一張卡（可收合、預設展開；已以 App 開啟時整張不顯示）＋設定頁同一份內容（不再包一層卡）。
+// Android／Chromium：攔 beforeinstallprompt → 顯示「安裝到主畫面」按鈕；還沒有事件時顯示瀏覽器選單步驟，不留白。
+// iPhone／iPad：永遠顯示 Safari「分享 › 加入主畫面」步驟（iOS 沒有 beforeinstallprompt）。
+let installEvt = null, installedNow = false;
+const installNow = () => installKind({
+  standalone: isStandalone(window), installed: installedNow,
+  ios: isIOS({ userAgent: navigator.userAgent, platform: navigator.platform, maxTouchPoints: navigator.maxTouchPoints }), prompt: !!installEvt,
+});
+const installText = (kind) => installCopy(kind, settings, settings.script === 'cn' && t2s ? t2s : undefined);
+function refreshInstall() {
+  for (const n of document.querySelectorAll('[data-install-body]')) { const m = installBody(); n.replaceWith(m); wb(m); }
+}
+addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; refreshInstall(); });
+addEventListener('appinstalled', () => { installEvt = null; installedNow = true; refreshInstall(); });
+async function promptInstall() {
+  const e = installEvt;
+  if (!e) return;
+  installEvt = null; // 一個事件只能 prompt 一次；沒裝就回到選單步驟
+  e.prompt();
+  const choice = await e.userChoice.catch(() => null);
+  if (choice?.outcome === 'accepted') installedNow = true;
+  refreshInstall();
+}
+function installBody() {
+  const kind = installNow(), c = installText(kind);
+  const p = (cls, text) => el('p', { class: cls, raw: true, text });
+  return el('div', { class: 'install-box', 'data-install-body': '', 'data-kind': kind, 'data-testid': 'install-box' },
+    c.note ? p('install-note', c.note) : '',
+    c.lead ? p('install-lead', c.lead) : '',
+    c.button ? el('button', { type: 'button', class: 'btn press', 'data-install': '', 'data-testid': 'install-btn', raw: true, onclick: promptInstall }, c.button) : '',
+    c.hint ? p('set-hint', c.hint) : '',
+    c.stepsLead ? p('install-steps-lead', c.stepsLead) : '',
+    c.steps.length ? el('ol', { class: 'install-steps', 'data-testid': 'install-steps' }, c.steps.map(t => el('li', { raw: true }, t))) : '');
+}
+function installCard() {
+  if (installNow() === 'installed') return '';
+  const t = installText('menu').title;
   return collapsible(el('section', { class: 'hcard install', id: 'install-card', 'data-testid': 'install' }), 'install',
-    el('span', { class: 'hc-label', text: byLang('加到主畫面', 'Add to Home Screen') }), el('div', { class: 'blk-body', id: 'install-body' }, nodes));
+    el('h2', { id: 'install-h', raw: true, text: byLang(t, 'Add to Home Screen') }), el('div', { class: 'blk-body', id: 'install-body' }, installBody()));
 }
 
 // ---------- 可收合的內容區塊（預設展開） ----------
@@ -445,7 +473,7 @@ function settingsView() {
       seg('theme', THEMES, enOr('版面配色', 'Colour theme'), 'theme-set'),
       el('h2', { text: '使用教學' }),
       el('button', { type: 'button', class: 'btn press', id: 'tour-replay', onclick: () => { location.hash = '#/'; setTimeout(() => replayTour(), 50); } }, '重新觀看使用教學'),
-      el('h2', { text: '加到主畫面' }), installCard(false) || el('p', { class: 'set-hint', text: '已經以 App 模式開啟。' }),
+      el('h2', { id: 'install-set', raw: true, text: installText('menu').title }), installBody(),
       el('h2', { text: '其他' }),
       el('p', {}, el('a', { href: BIBLE_URL, target: '_blank', rel: 'noopener noreferrer' }, '原文對照聖經 ↗'))));
 }

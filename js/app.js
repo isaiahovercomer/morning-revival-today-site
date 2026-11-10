@@ -121,8 +121,8 @@ async function apiFetch(url) {
 
 // 當週禱研背進度：中文／English／中英各自的說法（中文仍稱「禱背」，英文一律 pray-reading, reciting）
 const WEEK_ZH = '當週禱研背進度', WEEK_EN = 'This week’s pray-reading, reciting progress';
-// 首頁三張內容卡標題前加「台中」（t112u）；每日頁標頭與 daynav 仍用不加前綴的 WEEK_ZH／WEEK_EN
-const HOME_ZH = '台中', HOME_EN = 'Taichung ';
+// 首頁三張內容卡標題前加「台中」（t112u；英文 t113u 加冒號「Taichung: 」）；每日頁標頭與 daynav 仍用不加前綴的 WEEK_ZH／WEEK_EN
+const HOME_ZH = '台中', HOME_EN = 'Taichung: ';
 const homeTitle = (zh, en) => byLang(HOME_ZH + zh, HOME_EN + en);
 /** 只在 English 介面換英文（設定頁各標題維持中文；中英並列太長） */
 const enOr = (zh, en) => settings.lang === 'en' ? en : zh;
